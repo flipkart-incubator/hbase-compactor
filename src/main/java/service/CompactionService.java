@@ -1,161 +1,112 @@
 package service;
 
 import config.CompactorConfig;
-import org.apache.hadoop.hbase.HRegionInfo;
+import static config.CompactorConfig.FORCE_COMPACTION;
+import static config.CompactorConfig.RECOMPACT_REGION_HOURS;
+import static config.CompactorConfig.TABLE_NAME_KEY;
+import static config.CompactorConfig.WAIT_TIME_KEY;
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.CompactionState;
 import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.NoServerForRegionException;
-import org.apache.hadoop.hbase.exceptions.DeserializationException;
-import org.apache.hadoop.hbase.protobuf.generated.AdminProtos;
+import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-
-import static config.CompactorConfig.*;
-
 public class CompactionService {
-    private static Logger log = Logger.getLogger(CompactionService.class);
+  private static Logger log = Logger.getLogger(CompactionService.class);
 
-    private Admin admin;
-    private ExecutorService executorService;
-    private Connection connection;
-    private CompactorConfig compactorConfig;
-    private int batchSize;
-    private int waitTime;
+  private Admin admin;
+  private Connection connection;
+  private CompactorConfig compactorConfig;
+  private int waitTime;
+  private TableName tableName;
+  private Map<String, RegionInfo> regionInfoMap = new HashMap<>();
 
-    public CompactionService(Connection connection, CompactorConfig config) throws IOException {
-        this.batchSize = (int) config.getConfig(BATCH_SIZE_KEY);
-        this.waitTime =  ((int)config.getConfig(WAIT_TIME_KEY))*1000;
-        executorService = Executors.newFixedThreadPool(this.batchSize);
-        this.admin = connection.getAdmin();
-        this.compactorConfig = config;
-        this.connection = connection;
-    }
+  public CompactionService(Connection connection, CompactorConfig config) throws IOException {
+    this.tableName = TableName.valueOf((String) config.getConfig(TABLE_NAME_KEY));
+    this.waitTime = ((int) config.getConfig(WAIT_TIME_KEY)) * 1000;
+    this.admin = connection.getAdmin();
+    this.compactorConfig = config;
+    this.connection = connection;
+    updateAllRegions();
+  }
 
+  private long getTimeAddHours(int numHours) {
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(new Date());
+    cal.add(Calendar.HOUR, numHours);
+    return cal.getTime().getTime();
+  }
 
-    public void start() throws IOException, InterruptedException {
-        RegionFetcher regionFetcher = new RegionFetcher(connection, compactorConfig);
+  private void updateAllRegions() throws IOException {
+    List<RegionInfo> regionInfos = this.admin.getRegions(tableName);
+    regionInfos.stream().forEach(regionInfo -> {
+      regionInfoMap.putIfAbsent(regionInfo.getEncodedName(), regionInfo);
+    });
+  }
 
-        log.info("starting major compaction");
+  public void start() throws IOException, InterruptedException {
+    RegionFetcher regionFetcher = new RegionFetcher(connection, compactorConfig);
+    log.info("Starting major compaction for table " + tableName);
 
-        Map<String, List<String>> regionServers = regionFetcher.getNext();
-
-        Map<String, String> previouslyTriggered = new HashMap<>();
-
-        boolean done = false;
-        int doneRegions=0;
-
-        //TODO:  not checking for null for the first call: regionFetcher.getNext();
-        while(!done || regionServers.size()!=0) {
-
-            while (regionServers.size() < this.batchSize && !done) {
-                Map<String, List<String>> nextRegionServers = regionFetcher.getNext();
-                if (nextRegionServers != null && nextRegionServers.size() == 0) {
-                    done = true;
-                    break;
-                }
-
-                if(nextRegionServers != null) {
-                    merge(regionServers, nextRegionServers);
-                } else {
-                    log.error("Regions fetch seem to have failed, will sleep and retry");
-                    Thread.sleep(this.waitTime);
-                }
-            }
-
-            int i = 0;
-
-            List<Future> futures = new ArrayList<>();
-
-            List<String> doneRegionServers = new ArrayList<>();
-
-            for (Map.Entry<String, List<String>> entry : regionServers.entrySet()) {
-
-                if (i > this.batchSize)
-                    break;
-
-                String regionName = entry.getValue().get(entry.getValue().size()-1);
-                String regionServer = entry.getKey();
-
-                if(previouslyTriggered.containsKey(regionServer)) {
-                    try {
-                        AdminProtos.GetRegionInfoResponse.CompactionState compactionState = admin.getCompactionStateForRegion(Bytes.toBytes(previouslyTriggered.get(regionServer)));
-                        if (compactionState == AdminProtos.GetRegionInfoResponse.CompactionState.MAJOR) {
-                            log.info("Major compaction still in progress on " + regionServer + " on region " + previouslyTriggered.get(regionServer));
-                            i++;
-                            continue;
-                        }
-                    } catch (IllegalArgumentException e) {
-                        log.error("Region does not exist " + regionName + ", continuing compaction on " + regionServer);
-                        e.printStackTrace();
-                    } catch (NoServerForRegionException e) {
-                        log.error("Region " + regionName + " is not served by any RS, continuing compaction on " + regionServer);
-                        e.printStackTrace();
-                    } catch (Exception e) {
-                        log.error("Failed to check compaction status " + regionName + " on " + regionServer + ", continuing compaction on " + regionServer);
-                        e.printStackTrace();
-                    }
-                }
-
-
-                previouslyTriggered.put(regionServer, regionName);
-
-                entry.getValue().remove(entry.getValue().size()-1);
-
-                if(entry.getValue().size() == 0) {
-                    doneRegionServers.add(entry.getKey());
-                }
-
-                log.info("Running compaction: " + regionName + " on " + regionServer);
-
-                i++;
-                doneRegions++;
-
-                futures.add(executorService.submit(new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        try {
-                            admin.majorCompactRegion(Bytes.toBytes(regionName));
-                        } catch (IOException e) {
-                            throw new Exception(e);
-                        }
-                        return regionName + ":" + regionServer;
-                    }
-                }));
-            }
-
-            doneRegionServers.forEach(drs -> regionServers.remove(drs));
-
-            for (Future future : futures) {
-                try {
-                    log.info("Triggered compaction: " + future.get());
-                } catch (ExecutionException e) {
-                    log.error(e);
-                    e.printStackTrace();
-                }
-            }
-
-            log.info("Sleeping for " + this.waitTime + " done:" + doneRegions);
-            Thread.sleep(this.waitTime);
+    Set<String> compactingRegions = new HashSet<>();
+    Set<String> completedRegions = new HashSet<>();
+    int iteration = 0;
+    while (true) {
+      iteration += 1;
+      updateAllRegions();
+      log.info("Running iteration: " + iteration);
+      for (String compactingRegion : compactingRegions) {
+        CompactionState compactionState = admin.getCompactionStateForRegion(Bytes.toBytes(compactingRegion));
+        log.info("Compaction state: " + compactingRegion + " - " + compactionState);
+        if (compactionState.equals(CompactionState.MAJOR) || compactionState.equals(CompactionState.MAJOR_AND_MINOR)) {
+          log.info("In Progress compaction for: " + compactingRegion);
+        } else {
+          log.info("Compaction complete for: " + compactingRegion);
+          completedRegions.add(compactingRegion);
         }
+      }
+      compactingRegions.removeAll(completedRegions);
 
+      List<String> regionsBatch = regionFetcher.getNextBatchOfEncodedRegions(compactingRegions);
+      log.info("Received regions in this batch of size: " + regionsBatch.size() + " Regions: " + regionsBatch);
 
-        log.info("compaction complete");
-    }
-
-    private void merge(Map<String, List<String>> map1, Map<String, List<String>> map2) {
-        for(Map.Entry<String, List<String>> entry : map2.entrySet()) {
-            if(map1.containsKey(entry.getKey())) {
-                map1.get(entry.getKey()).addAll(entry.getValue());
-            } else {
-                map1.put(entry.getKey(), entry.getValue());
-            }
+      if (regionsBatch.size() <= 0 && compactingRegions.size() <= 0) {
+        break; // exhausted all regions
+      }
+      for (String encodedRegion : regionsBatch) {
+        log.info("Starting compaction for: " + encodedRegion);
+        if (completedRegions.contains(encodedRegion) || compactingRegions.contains(encodedRegion)) {
+          log.info("Already completed or in progress: " + encodedRegion);
+          continue;
         }
+        if (regionInfoMap.containsKey(encodedRegion)) {
+          long lastCompactionTime =
+              admin.getLastMajorCompactionTimestampForRegion(regionInfoMap.get(encodedRegion).getRegionName());
+          if (!(boolean) compactorConfig.getConfig(FORCE_COMPACTION)
+              && getTimeAddHours(-1 * RECOMPACT_REGION_HOURS) < lastCompactionTime) {
+            log.info(
+                "Skipping compaction for " + encodedRegion + ". Already compacted at " + new Date(lastCompactionTime)
+                    + " which is later than " + new Date(getTimeAddHours(-1 * RECOMPACT_REGION_HOURS)));
+            continue;
+          }
+        }
+        admin.majorCompactRegion(encodedRegion.getBytes());
+        log.info("Triggered compaction for: " + encodedRegion);
+        compactingRegions.add(encodedRegion);
+      }
+      log.info("Sleeping for " + this.waitTime);
+      Thread.sleep(this.waitTime);
     }
+    log.info("compaction complete for regions: " + completedRegions);
+  }
 }

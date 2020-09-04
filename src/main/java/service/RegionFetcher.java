@@ -1,101 +1,155 @@
 package service;
 
 import config.CompactorConfig;
-import org.apache.commons.math3.geometry.partitioning.Region;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.HRegionInfo;
+import static config.CompactorConfig.BATCH_SIZE_KEY;
+import static config.CompactorConfig.TABLE_NAME_KEY;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.exceptions.DeserializationException;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.RegionInfo;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
-import org.apache.hadoop.hbase.filter.RowFilter;
+import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
+import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import static config.CompactorConfig.BATCH_SIZE_KEY;
-import static config.CompactorConfig.TABLE_NAME_KEY;
-
 public class RegionFetcher {
 
-    private static Logger log = Logger.getLogger(RegionFetcher.class);
+  private static Logger log = Logger.getLogger(RegionFetcher.class);
 
-    private Table metaTable;
-    private int batchSize;
-    private byte[] lastRow;
-    private String tableName;
+  private Admin admin;
+  private Table metaTable;
+  private int maxConcurrentRegions;
+  private TableName tableName;
+  private final static String HBASE_NS = "hbase";
+  private final static String META_TABLE = "meta";
+  private final static byte[] INFO_CF = Bytes.toBytes("info");
+  private final static byte[] FN_CQ = Bytes.toBytes("fn");
+  private Map<String, List<String>> regionFNHostnameMapping = new HashMap<>();
+  private Set<String> processedRegions = new HashSet<>();
+  private Set<String> allRegions = new HashSet<>();
+  private int iteration = 0;
 
-    public RegionFetcher(Connection connection, CompactorConfig config) throws IOException {
-        this.metaTable = connection.getTable(TableName.valueOf("hbase","meta"));
-        this.batchSize = (int) config.getConfig(BATCH_SIZE_KEY);
-        this.tableName = (String) config.getConfig(TABLE_NAME_KEY);
+  public RegionFetcher(Connection connection, CompactorConfig config) throws IOException {
+    this.metaTable = connection.getTable(TableName.valueOf(HBASE_NS, META_TABLE));
+    this.maxConcurrentRegions = (int) config.getConfig(BATCH_SIZE_KEY);
+    this.tableName = TableName.valueOf((String) config.getConfig(TABLE_NAME_KEY));
+    this.admin = connection.getAdmin();
+
+    this.refreshFavoredNodesMapping();
+    this.refreshRegions();
+  }
+
+  private List<String> getFavoredNodesList(byte[] favoredNodes) throws IOException {
+    HBaseProtos.FavoredNodes f = HBaseProtos.FavoredNodes.parseFrom(favoredNodes);
+    List<HBaseProtos.ServerName> protoNodes = f.getFavoredNodeList();
+    ServerName[] servers = new ServerName[protoNodes.size()];
+    int i = 0;
+    for (HBaseProtos.ServerName node : protoNodes) {
+      servers[i++] = ProtobufUtil.toServerName(node);
     }
+    return Arrays.asList(servers).stream().map(server -> server.getHostname()).collect(Collectors.toList());
+  }
 
-    public HashMap<String, List<String>> getNext() {
+  private void refreshFavoredNodesMapping() throws IOException {
+    Optional<PrefixFilter> filterOptional = Optional.of(new PrefixFilter(Bytes.toBytes(tableName + ",")));
+    ResultScanner scanner = metaTable.getScanner(getScan(INFO_CF, FN_CQ, filterOptional));
 
-        HashMap<String, List<String>> regionServers = new HashMap<>();
-        ResultScanner scanner = null;
-
-        try {
-            scanner = metaTable.getScanner(getScan());
-        } catch (IOException e) {
-            log.error("Failed to create scanner: " + e);
-            e.printStackTrace();
-            return null;
+    while (true) {
+      Result[] results = scanner.next(10);
+      if (results != null && results.length > 0) {
+        for (int index = 0; index < results.length; index += 1) {
+          Result result = results[index];
+          List<String> fnHostsList = getFavoredNodesList(result.getValue(INFO_CF, FN_CQ));
+          String[] tokens = Bytes.toString(result.getRow()).split("\\.");
+          log.trace("Identified Region: " + tokens[tokens.length - 1] + " fns: " + fnHostsList);
+          regionFNHostnameMapping.put(tokens[tokens.length - 1], fnHostsList);
         }
+      } else {
+        break;
+      }
+    }
+  }
 
-        for(int i=0;i<batchSize;i++) {
-            Result result = null;
-            try {
-                result = scanner.next();
-            } catch (IOException e) {
-                log.error(e);
-                e.printStackTrace();
-                scanner.close();
-                return null;
-            }
-            if(result != null) {
-                List<Cell> serverCells= result.getColumnCells(Bytes.toBytes("info"), Bytes.toBytes("server"));
+  private void refreshRegions() throws IOException {
+    allRegions.clear();
+    allRegions.addAll(
+        this.admin.getRegions(tableName).stream().map(region -> region.getEncodedName()).collect(Collectors.toList()));
 
-                for(Cell cell : serverCells) {
-                    String serverName = Bytes.toString(cell.getValue());
-                    String[] tok = Bytes.toString(cell.getRow()).split("\\.");
-                    String regionName = tok[tok.length-1];
-
-
-                    if(regionServers.containsKey(serverName)) {
-                        regionServers.get(serverName).add(regionName);
-                    } else {
-                        regionServers.put(serverName, new ArrayList<>());
-                        regionServers.get(serverName).add(regionName);
-                    }
-                    lastRow = getNextStartRow(cell.getRow());
-                }
-            }
+    for (ServerName sn : this.admin.getRegionServers()) {
+      List<RegionInfo> regions = this.admin.getRegions(sn);
+      regions.stream().forEach(region -> {
+        if (allRegions.contains(region.getEncodedName())) {
+          regionFNHostnameMapping.putIfAbsent(region.getEncodedName(), new ArrayList<String>() {{
+            sn.getHostname();
+          }});
         }
-        scanner.close();
-        return regionServers;
+      });
+    }
+    log.trace("All regions: " + allRegions);
+  }
+
+  private Scan getScan(byte[] cf, byte[] column, Optional<PrefixFilter> filterOptional) {
+    Scan scan = new Scan();
+    scan.addColumn(cf, column);
+    if (filterOptional.isPresent()) {
+      scan.setFilter(filterOptional.get());
+    }
+    return scan;
+  }
+
+  public List<String> getNextBatchOfEncodedRegions(Set<String> inProgressRegions) throws IOException {
+    iteration += 1;
+    log.info("Fetching regions for this iteration: " + iteration + ", regionsCompactionInProgress: " + inProgressRegions
+        .size() + ", regionsCompacted: " + (processedRegions.size() - inProgressRegions.size()) + ", allRegions: "
+        + allRegions.size());
+    List<String> encodedRegions = new ArrayList<>();
+    refreshRegions();
+    refreshFavoredNodesMapping();
+
+    Set<String> serversForThisBatch = new HashSet<>();
+    for (String encodedRegion : inProgressRegions) {
+      if (regionFNHostnameMapping.containsKey(encodedRegion)) {
+        serversForThisBatch.addAll(regionFNHostnameMapping.get(encodedRegion));
+      }
     }
 
-    private byte[] getNextStartRow(byte[] row) {
-        byte[] startRow = new byte[row.length + 1];
-
-        System.arraycopy(row, 0, startRow, 0, row.length);
-        startRow[row.length] = (byte) 0;
-        return startRow;
+    for (String encodedRegion : allRegions) {
+      if (!inProgressRegions.contains(encodedRegion) && encodedRegions.size() < (
+          maxConcurrentRegions - inProgressRegions.size()) && !processedRegions.contains(encodedRegion)) {
+        if (!regionFNHostnameMapping.containsKey(encodedRegion)) {
+          throw new IOException("Invalid favored nodes for region: " + encodedRegion);
+        }
+        boolean shouldAdd = true;
+        for (String fn : regionFNHostnameMapping.get(encodedRegion)) {
+          if (serversForThisBatch.contains(fn)) {
+            shouldAdd = false;
+            break;
+          }
+        }
+        if (shouldAdd) {
+          serversForThisBatch.addAll(regionFNHostnameMapping.get(encodedRegion));
+          encodedRegions.add(encodedRegion);
+        }
+      }
     }
-
-    public Scan getScan() {
-        Scan scan = new Scan();
-        scan.addColumn(Bytes.toBytes("info"), Bytes.toBytes("server"));
-        scan.setFilter(new PrefixFilter(Bytes.toBytes(tableName + ",")));
-
-        if(lastRow != null)
-            scan.setStartRow(lastRow);
-        return scan;
-    }
+    log.info("Returning servers: " + serversForThisBatch + ", and regions: " + encodedRegions);
+    processedRegions.addAll(encodedRegions);
+    return encodedRegions;
+  }
 }
