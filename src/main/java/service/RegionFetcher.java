@@ -78,7 +78,11 @@ public class RegionFetcher {
           List<String> fnHostsList = getFavoredNodesList(result.getValue(INFO_CF, FN_CQ));
           String[] tokens = Bytes.toString(result.getRow()).split("\\.");
           log.trace("Identified Region: " + tokens[tokens.length - 1] + " fns: " + fnHostsList);
-          regionFNHostnameMapping.put(tokens[tokens.length - 1], fnHostsList);
+          if (fnHostsList.size() > 0) {
+            regionFNHostnameMapping.put(tokens[tokens.length - 1], fnHostsList);
+          } else {
+            regionFNHostnameMapping.putIfAbsent(tokens[tokens.length - 1], fnHostsList);
+          }
         }
       } else {
         break;
@@ -95,9 +99,9 @@ public class RegionFetcher {
       List<RegionInfo> regions = this.admin.getRegions(sn);
       regions.stream().forEach(region -> {
         if (allRegions.contains(region.getEncodedName())) {
-          regionFNHostnameMapping.putIfAbsent(region.getEncodedName(), new ArrayList<String>() {{
-            sn.getHostname();
-          }});
+          ArrayList<String> temp = new ArrayList<String>();
+          temp.add(sn.getHostname());
+          regionFNHostnameMapping.putIfAbsent(region.getEncodedName(), temp);
         }
       });
     }
