@@ -1,23 +1,18 @@
-# hbase-compactor
-Normally huge clusters which are very particular about peformance have major compactions turned off. Currenlty, to turn on the major compaction config need to be changed, which require whole cluster restart. Moreover, major compaction once triggered cannot be stopped without cluster restart.
+## hbase-compactor
 
-This utility trigger major compaction in hbase in tightly controlled manner where you can start/stop compaction without cluster restart. It ensures that only 1 major compaction is running at a time on a single region server and try to parallelize it with concurrency of <batch size> (default 1) on whole hbase cluster.
+Hbase Major compaction is a resource intensive operation. One would like to control the compaction with lot more flexibility than what hbase provides. One such attempt is this tool `hbase-compactor`. Some of the important factors which can be controlled are
 
-Actual parallelism =  min(number of region servers, batch size)
+* How many parallel region compactions
+* If favored nodes are applicable, how many parallel regions with non overlapping favored nodes.
+* Delay between 2 region compactions
+* Can be configured using a cron job. 
 
-# Build
+## Build
 ```
 mvn clean package
 ```
 
-# Run
+## Run
 ```
-java -jar <jar> <zk quorum> <zk node> <table name> [batch size default=1] [sleep b/w batch in sec default=600]
+java -jar <jar> <zk quorum> <zk node> <table name> <batch size> <sleep b/w batch in sec>
 ```
-
-# Tested versions
-
-* 0.98
-* 1.1.2
-
-
