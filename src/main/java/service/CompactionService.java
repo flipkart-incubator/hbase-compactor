@@ -20,6 +20,8 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
+import regionmanager.IRegionFetcher;
+import regionmanager.RegionFetcherFactory;
 
 public class CompactionService {
   private static Logger log = Logger.getLogger(CompactionService.class);
@@ -30,6 +32,8 @@ public class CompactionService {
   private int waitTime;
   private TableName tableName;
   private Map<String, RegionInfo> regionInfoMap = new HashMap<>();
+  private RegionFetcherFactory regionFetcherFactory;
+  private IRegionFetcher regionFetcher;
   private final int maxFailuresAllowed = 20;
 
   public CompactionService(Connection connection, CompactorConfig config) throws IOException {
@@ -38,6 +42,8 @@ public class CompactionService {
     this.admin = connection.getAdmin();
     this.compactorConfig = config;
     this.connection = connection;
+    this.regionFetcherFactory = new RegionFetcherFactory(this.connection, this.compactorConfig);
+    this.regionFetcher = this.regionFetcherFactory.getRegionFetcher();
     updateAllRegions();
   }
 
@@ -56,7 +62,7 @@ public class CompactionService {
   }
 
   public void start() throws IOException, InterruptedException {
-    RegionFetcher regionFetcher = new RegionFetcher(connection, compactorConfig);
+
     log.info("Starting major compaction for table " + tableName);
 
     Set<String> compactingRegions = new HashSet<>();
@@ -82,7 +88,7 @@ public class CompactionService {
         }
         compactingRegions.removeAll(completedRegions);
 
-        List<String> regionsBatch = regionFetcher.getNextBatchOfEncodedRegions(compactingRegions);
+        List<String> regionsBatch = this.regionFetcher.getNextBatchOfEncodedRegions(compactingRegions);
         log.info("Received regions in this batch of size: " + regionsBatch.size() + " Regions: " + regionsBatch);
 
         if (regionsBatch.size() <= 0 && compactingRegions.size() <= 0) {
