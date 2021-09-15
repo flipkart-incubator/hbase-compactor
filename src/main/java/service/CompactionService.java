@@ -43,7 +43,7 @@ public class CompactionService {
     this.compactorConfig = config;
     this.connection = connection;
     this.regionFetcherFactory = new RegionFetcherFactory(this.connection, this.compactorConfig);
-    this.regionFetcher = this.regionFetcherFactory.getRegionFetcher();
+    this.regionFetcher = this.regionFetcherFactory.getRegionFetcher(this.compactorConfig.getConfig(CompactorConfig.REGION_SELECTION_STRATEGY).toString());
     updateAllRegions();
   }
 

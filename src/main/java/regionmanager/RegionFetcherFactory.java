@@ -13,6 +13,7 @@ public class RegionFetcherFactory {
     private final CompactorConfig compactorConfig;
     private final Map<String, IRegionFetcher> iRegionFetcherMap;
     private final String DEFAULT_IREGIONFETCHER_STRING = "DEFAULT";
+    private final String LOADAWARE_IREGIONFETCHER_STRING = "loadAware";
     private final Logger log = Logger.getLogger(this.getClass().getName());
 
     public RegionFetcherFactory(Connection connection, CompactorConfig compactorConfig) {
@@ -25,7 +26,23 @@ public class RegionFetcherFactory {
         try {
             this.iRegionFetcherMap.putIfAbsent(DEFAULT_IREGIONFETCHER_STRING, new SimpleRegionFetcher(this.connection, this.compactorConfig));
         } catch (IOException e) {
-            log.error("could not bootstrap RegionFetcher " + e.getMessage(), e);
+            log.error("could not bootstrap" + DEFAULT_IREGIONFETCHER_STRING +" RegionFetcher " + e.getMessage(), e);
+            throw new IOException(e);
+        }
+        return this.iRegionFetcherMap.get(DEFAULT_IREGIONFETCHER_STRING);
+    }
+
+    public IRegionFetcher getRegionFetcher(String strategy) throws IOException {
+        try {
+            if (strategy.equals(LOADAWARE_IREGIONFETCHER_STRING)){
+                this.iRegionFetcherMap.putIfAbsent(LOADAWARE_IREGIONFETCHER_STRING, new LoadAwareRegionFetcher(this.connection, this.compactorConfig));
+            }
+            else {
+                return this.getRegionFetcher();
+            }
+
+        } catch (IOException e) {
+            log.error("could not bootstrap "+ LOADAWARE_IREGIONFETCHER_STRING +" RegionFetcher " + e.getMessage(), e);
             throw new IOException(e);
         }
         return this.iRegionFetcherMap.get(DEFAULT_IREGIONFETCHER_STRING);
