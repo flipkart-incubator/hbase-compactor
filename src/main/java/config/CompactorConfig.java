@@ -16,7 +16,7 @@ public class CompactorConfig {
   public static final String ZK_NODE_KEY = "znode";                   // zk node
   public static final String WAIT_TIME_KEY = "wait_time";             // sleep between each batch
   public static final String FORCE_COMPACTION = "force_compaction";   // force compaction if within recompaction gap
-
+  public static final String SERVER_PARALLEL_TASKS = "num_parallel_tasks";
   private Properties properties;
 
   public CompactorConfig(String[] args) throws MissingArgumentException {
@@ -36,6 +36,7 @@ public class CompactorConfig {
     properties.put(BATCH_SIZE_KEY, Integer.valueOf(args[3]));
     properties.put(WAIT_TIME_KEY, Integer.valueOf(args[4]) < 300 ? DEFAULT_WAIT : Integer.valueOf(args[4]));
     properties.put(FORCE_COMPACTION, (args.length > 5 && args[5].equals("force")) ? true : false);
+    properties.put(SERVER_PARALLEL_TASKS, (args.length > 6 ? Integer.parseInt(args[6]) : 1));
   }
 
   public Object getConfig(String key) {

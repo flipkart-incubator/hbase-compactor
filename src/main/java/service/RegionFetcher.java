@@ -1,8 +1,7 @@
 package service;
 
 import config.CompactorConfig;
-import static config.CompactorConfig.BATCH_SIZE_KEY;
-import static config.CompactorConfig.TABLE_NAME_KEY;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +27,8 @@ import org.apache.hadoop.hbase.protobuf.generated.HBaseProtos;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 
+import static config.CompactorConfig.*;
+
 public class RegionFetcher {
 
   private static Logger log = Logger.getLogger(RegionFetcher.class);
@@ -38,6 +39,7 @@ public class RegionFetcher {
   private TableName tableName;
   private final static String HBASE_NS = "hbase";
   private final static String META_TABLE = "meta";
+  private final int MAX_PARALLEL_SERVER_COMPACTION;
   private final static byte[] INFO_CF = Bytes.toBytes("info");
   private final static byte[] FN_CQ = Bytes.toBytes("fn");
   private Map<String, List<String>> regionFNHostnameMapping = new HashMap<>();
@@ -49,6 +51,7 @@ public class RegionFetcher {
     this.metaTable = connection.getTable(TableName.valueOf(HBASE_NS, META_TABLE));
     this.maxConcurrentRegions = (int) config.getConfig(BATCH_SIZE_KEY);
     this.tableName = TableName.valueOf((String) config.getConfig(TABLE_NAME_KEY));
+    this.MAX_PARALLEL_SERVER_COMPACTION = (int)config.getConfig(SERVER_PARALLEL_TASKS);
     this.admin = connection.getAdmin();
 
     this.refreshFavoredNodesMapping();
@@ -126,10 +129,10 @@ public class RegionFetcher {
     refreshRegions();
     refreshFavoredNodesMapping();
 
-    Set<String> serversForThisBatch = new HashSet<>();
+    Map<String, Integer> serversForThisBatch = new HashMap<>();
     for (String encodedRegion : inProgressRegions) {
       if (regionFNHostnameMapping.containsKey(encodedRegion)) {
-        serversForThisBatch.addAll(regionFNHostnameMapping.get(encodedRegion));
+        this.updateParallelCompactionCount(encodedRegion, serversForThisBatch);
       }
     }
 
@@ -141,13 +144,13 @@ public class RegionFetcher {
         }
         boolean shouldAdd = true;
         for (String fn : regionFNHostnameMapping.get(encodedRegion)) {
-          if (serversForThisBatch.contains(fn)) {
+          if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn) < this.MAX_PARALLEL_SERVER_COMPACTION) {
             shouldAdd = false;
             break;
           }
         }
         if (shouldAdd) {
-          serversForThisBatch.addAll(regionFNHostnameMapping.get(encodedRegion));
+          this.updateParallelCompactionCount(encodedRegion, serversForThisBatch);
           encodedRegions.add(encodedRegion);
         }
       }
@@ -155,5 +158,13 @@ public class RegionFetcher {
     log.info("Returning servers: " + serversForThisBatch + ", and regions: " + encodedRegions);
     processedRegions.addAll(encodedRegions);
     return encodedRegions;
+  }
+
+  private void updateParallelCompactionCount(String encodedRegion, Map<String, Integer> compactingServersTaskCount) {
+    for(String s: regionFNHostnameMapping.get(encodedRegion)) {
+      compactingServersTaskCount.putIfAbsent(s,0);
+      int runningCompactionCount = compactingServersTaskCount.get(s);
+      compactingServersTaskCount.put(s,++runningCompactionCount);
+    }
   }
 }
