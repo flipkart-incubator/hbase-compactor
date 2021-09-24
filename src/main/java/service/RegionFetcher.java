@@ -53,7 +53,9 @@ public class RegionFetcher {
     this.tableName = TableName.valueOf((String) config.getConfig(TABLE_NAME_KEY));
     this.MAX_PARALLEL_SERVER_COMPACTION = (int)config.getConfig(SERVER_PARALLEL_TASKS);
     this.admin = connection.getAdmin();
-
+    log.info("Max Concurrent Region: "+ this.maxConcurrentRegions);
+    log.info("Max Parallel Compaction Task: "+ this.MAX_PARALLEL_SERVER_COMPACTION);
+    log.info("Table Name: "+ this.tableName);
     this.refreshFavoredNodesMapping();
     this.refreshRegions();
   }
@@ -150,6 +152,7 @@ public class RegionFetcher {
           }
         }
         if (shouldAdd) {
+          log.info("Adding server " + regionFNHostnameMapping.get(encodedRegion) + " for Region: " + encodedRegion);
           this.updateParallelCompactionCount(encodedRegion, serversForThisBatch);
           encodedRegions.add(encodedRegion);
         }
