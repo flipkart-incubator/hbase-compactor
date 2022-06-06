@@ -146,7 +146,7 @@ public class RegionFetcher {
         }
         boolean shouldAdd = true;
         for (String fn : regionFNHostnameMapping.get(encodedRegion)) {
-          if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn) > this.MAX_PARALLEL_SERVER_COMPACTION) {
+          if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn) >= this.MAX_PARALLEL_SERVER_COMPACTION) {
             shouldAdd = false;
             break;
           }
