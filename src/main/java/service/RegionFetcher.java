@@ -146,7 +146,7 @@ public class RegionFetcher {
         }
         boolean shouldAdd = true;
         for (String fn : regionFNHostnameMapping.get(encodedRegion)) {
-          if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn) < this.MAX_PARALLEL_SERVER_COMPACTION) {
+          if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn) > this.MAX_PARALLEL_SERVER_COMPACTION) {
             shouldAdd = false;
             break;
           }
@@ -166,8 +166,7 @@ public class RegionFetcher {
   private void updateParallelCompactionCount(String encodedRegion, Map<String, Integer> compactingServersTaskCount) {
     for(String s: regionFNHostnameMapping.get(encodedRegion)) {
       compactingServersTaskCount.putIfAbsent(s,0);
-      int runningCompactionCount = compactingServersTaskCount.get(s);
-      compactingServersTaskCount.put(s,++runningCompactionCount);
+      compactingServersTaskCount.compute(s, (k,v) -> v==null ? 1: v+1);
     }
   }
 }
