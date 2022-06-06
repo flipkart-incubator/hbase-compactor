@@ -14,5 +14,5 @@ mvn clean package
 
 ## Run
 ```
-java -jar <jar> <zk quorum> <zk node> <table name> <batch size> <sleep b/w batch in sec>
+java -jar <jar> <zk quorum> <zk node> <table name> <batch size> <sleep b/w batch in sec> <to_force> <max_num_regions_on_one_server>
 ```

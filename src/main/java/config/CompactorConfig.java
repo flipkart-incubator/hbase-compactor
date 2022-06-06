@@ -27,7 +27,8 @@ public class CompactorConfig {
               + "zk_node: Zookeeper znode. Example: /hbase\n\n" + "table_name: Table name to compact\n\n"
               + "num_compactions: number of region compactions in parallel.\n\n"
               + "delay: Delay between 2 compaction triggers. Default: 600 seconds\n\n"
-              + "force: region compacted in last 3 hours will be ignored unless this flag is passed. Optional: true\n");
+              + "force: region compacted in last 3 hours will be ignored unless this flag is passed. Optional: true\n"
+              + "num_regions: max number of compaction that can run on a RegionServer simultaneously\n");
     }
     properties = new Properties();
     properties.put(ZK_QUORUM_KEY, args[0]);
@@ -35,7 +36,7 @@ public class CompactorConfig {
     properties.put(TABLE_NAME_KEY, args[2]);
     properties.put(BATCH_SIZE_KEY, Integer.valueOf(args[3]));
     properties.put(WAIT_TIME_KEY, Integer.valueOf(args[4]) < 300 ? DEFAULT_WAIT : Integer.valueOf(args[4]));
-    properties.put(FORCE_COMPACTION, (args.length > 5 && args[5].equals("force")) ? true : false);
+    properties.put(FORCE_COMPACTION, (args.length > 5 && args[5].equals("true")) ? true : false);
     properties.put(SERVER_PARALLEL_TASKS, (args.length > 6 ? Integer.parseInt(args[6]) : 1));
   }
 
