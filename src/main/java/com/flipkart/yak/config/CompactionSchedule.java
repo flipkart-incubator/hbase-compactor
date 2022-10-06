@@ -9,8 +9,8 @@ import java.util.Objects;
 @Getter @Setter
 @AllArgsConstructor
 public class CompactionSchedule {
-    private int startHourOfTheDay;
-    private int endHourOfTheDay;
+    private final int startHourOfTheDay;
+    private final int endHourOfTheDay;
 
     @Override
     public boolean equals(Object o) {

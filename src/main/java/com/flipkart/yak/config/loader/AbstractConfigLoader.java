@@ -23,15 +23,17 @@ public abstract class AbstractConfigLoader {
      * initializes the config, ignores if issue in loading config
      */
     private void init() {
-        List<CompactionTriggerConfig> compactionTriggerConfigs = new ArrayList<>();
-        this.resourceNames.forEach(resource -> {
-            try {
-                compactionTriggerConfigs.add(this.loadConfig(resource));
-            } catch (ConfigurationException e) {
-                log.warn("Found issue with {} while loading.. ignoring this resource: {}", resource, e.getMessage());
-            }
-        });
-        this.config = this.mergeConfig(compactionTriggerConfigs);
+        if (config == null) {
+            List<CompactionTriggerConfig> compactionTriggerConfigs = new ArrayList<>();
+            this.resourceNames.forEach(resource -> {
+                try {
+                    compactionTriggerConfigs.add(this.loadConfig(resource));
+                } catch (ConfigurationException e) {
+                    log.warn("Found issue with {} while loading.. ignoring this resource: {}", resource, e.getMessage());
+                }
+            });
+            this.config = this.mergeConfig(compactionTriggerConfigs);
+        }
     }
 
     private CompactionTriggerConfig mergeConfig(List<CompactionTriggerConfig> compactionTriggerConfigs) {
@@ -48,6 +50,7 @@ public abstract class AbstractConfigLoader {
      * @param resourceName
      */
     public void addResource(String resourceName) {
+        log.info("Adding resource {}", resourceName);
         resourceNames.add(resourceName);
     }
 
@@ -67,8 +70,10 @@ public abstract class AbstractConfigLoader {
      * @throws ConfigurationException
      */
     public CompactionTriggerConfig getConfig() throws ConfigurationException {
-        if (config == null)
+        this.init();
+        if (config == null) {
             throw new ConfigurationException("Compaction Trigger Config not initialized!! Check if config file passed correctly");
+        }
         return config;
     }
 }

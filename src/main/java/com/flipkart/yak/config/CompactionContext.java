@@ -1,15 +1,17 @@
 package com.flipkart.yak.config;
 
+import com.flipkart.yak.interfaces.Validable;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.configuration.ConfigurationException;
 
 import java.util.Objects;
 
 @Getter @Setter
 @RequiredArgsConstructor
-public class CompactionContext {
+public class CompactionContext implements Validable {
 
     @NonNull final String clusterID;
     @NonNull final CompactionSchedule compactionSchedule;
@@ -41,5 +43,29 @@ public class CompactionContext {
     @Override
     public int hashCode() {
         return Objects.hash(getClusterID(), getCompactionProfileID());
+    }
+
+    @Override
+    public void validate() throws ConfigurationException {
+        if (tableName==null && nameSpace == null && rsGroup == null) {
+            throw new ConfigurationException("no target for compaction specified");
+        }
+        if (tableName!= null && tableName.contains(":")) {
+            String namespace = tableName.split(":")[0];
+            if (namespace.equals("hbase")) {
+                throw new ConfigurationException("hbase tables should not be compacted with custom trigger");
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "clusterID:'" + clusterID + '\'' +
+                ", tableName:'" + tableName + '\'' +
+                ", nameSpace='" + nameSpace + '\'' +
+                ", rsGroup:'" + rsGroup + '\'' +
+                ", compactionProfileID:'" + compactionProfileID + '\'' +
+                '}';
     }
 }

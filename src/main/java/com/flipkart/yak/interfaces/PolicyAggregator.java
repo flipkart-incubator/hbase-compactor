@@ -1,4 +1,4 @@
-package com.flipkart.yak.core;
+package com.flipkart.yak.interfaces;
 
 public interface PolicyAggregator {
 }
