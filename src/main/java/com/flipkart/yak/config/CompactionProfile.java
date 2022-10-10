@@ -44,7 +44,7 @@ public class CompactionProfile implements Validable, Configurable {
     }
 
     @Override
-    public void instantiateFrom(List<Pair<String, String>> configs) {
+    public void setFromConfig(List<Pair<String, String>> configs) {
 
     }
 }

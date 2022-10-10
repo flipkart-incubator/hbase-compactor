@@ -1,4 +1,4 @@
 package com.flipkart.yak.interfaces;
 
-public interface RegionSelectionPolicy {
+public interface RegionSelectionPolicy extends Configurable{
 }

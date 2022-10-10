@@ -3,8 +3,12 @@ package com.flipkart.yak.config.loader;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionProfile;
 import com.flipkart.yak.config.CompactionTriggerConfig;
+import com.flipkart.yak.interfaces.PolicyAggregator;
+import com.flipkart.yak.interfaces.RegionSelectionPolicy;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.hadoop.hbase.util.ReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -36,12 +40,24 @@ public abstract class AbstractConfigLoader {
         }
     }
 
+    @SneakyThrows
+    protected final RegionSelectionPolicy loadPolicy(String regionSelectionPolicy) {
+        return (RegionSelectionPolicy)ReflectionUtils.newInstance(Class.forName(regionSelectionPolicy));
+    }
+
+    @SneakyThrows
+    protected final PolicyAggregator loadAggregator(String policyAggregator) {
+        return (PolicyAggregator)ReflectionUtils.newInstance(Class.forName(policyAggregator));
+    }
+
     private CompactionTriggerConfig mergeConfig(List<CompactionTriggerConfig> compactionTriggerConfigs) {
         CompactionTriggerConfig.Builder builder = new CompactionTriggerConfig.Builder();
         Set<CompactionProfile> allProfiles = new HashSet<>();
         Set<CompactionContext> allContexts = new HashSet<>();
         compactionTriggerConfigs.forEach(ctc -> allProfiles.addAll(ctc.getCompactionProfiles()));
         compactionTriggerConfigs.forEach(ctc -> allContexts.addAll(ctc.getCompactionContexts()));
+        builder.withCompactionProfiles(allProfiles);
+        builder.withCompactionContexts(allContexts);
         return builder.build();
     }
 
