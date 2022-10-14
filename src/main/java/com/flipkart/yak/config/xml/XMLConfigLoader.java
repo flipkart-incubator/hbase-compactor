@@ -1,13 +1,9 @@
 package com.flipkart.yak.config.xml;
 
-import com.flipkart.yak.config.CompactionContext;
-import com.flipkart.yak.config.CompactionProfile;
-import com.flipkart.yak.config.CompactionSchedule;
-import com.flipkart.yak.config.CompactionTriggerConfig;
+import com.flipkart.yak.config.*;
 import com.flipkart.yak.config.loader.AbstractFileBasedConfigLoader;
-import com.flipkart.yak.interfaces.PolicyAggregator;
-import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.util.Pair;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -28,23 +24,30 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
 
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
+    private Document loadDocument(File file) throws ConfigurationException {
+        Document doc = null;
+        try {
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            doc = db.parse(file);
+            doc.getDocumentElement().normalize();
+        } catch (SAXException | ParserConfigurationException | IOException e) {
+            log.error(e.getMessage());
+            throw new ConfigurationException(e);
+        }
+        return doc;
+    }
 
 
     @Override
-    protected CompactionTriggerConfig loadConfigFromFile(File xmlFileName) throws ParserConfigurationException, IOException {
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document doc;
-        try {
-             doc = db.parse(xmlFileName);
-             doc.getDocumentElement().normalize();
-        } catch (SAXException e) {
-            log.error(e.getMessage());
-            throw new IOException(e);
-        }
-        List<CompactionContext> allContexts = this.getAllContexts(doc);
-        List<CompactionProfile> allProfiles = this.getAllProfiles(doc);
-        CompactionTriggerConfig.Builder builder = new CompactionTriggerConfig.Builder();
-        return builder.withCompactionContexts(new HashSet<>(allContexts)).withCompactionProfiles(new HashSet<>(allProfiles)).build();
+    public List<CompactionProfileConfig> getProfiles(File resource) throws ConfigurationException {
+        Document doc = this.loadDocument(resource);
+        return this.getAllProfiles(doc);
+    }
+
+    @Override
+    public List<CompactionContext> getCompactionContexts(File resource) throws ConfigurationException {
+        Document doc = this.loadDocument(resource);
+        return this.getAllContexts(doc);
     }
 
     private List<CompactionContext> getAllContexts(Document doc) {
@@ -68,61 +71,46 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
         return compactionContexts;
     }
 
-    private List<CompactionProfile> getAllProfiles(Document doc) {
-        List<CompactionProfile> compactionProfiles = new ArrayList<>();
+
+    private List<CompactionProfileConfig> getAllProfiles(Document doc) {
+        List<CompactionProfileConfig> compactionProfileConfigs = new ArrayList<>();
         NodeList allProfileMentionedInConfig = doc.getElementsByTagName(XMLConfigTags.PROFILE_LIST_TAG.name);
-        for (int i=0; i < allProfileMentionedInConfig.getLength(); i++) {
-            Node currentProfileDetails = allProfileMentionedInConfig.item(i);
-            if(currentProfileDetails.getNodeType() != Node.ELEMENT_NODE) {
-                continue;
+        XMLUtils.forEach(allProfileMentionedInConfig, currProfile -> {
+            NodeList children = currProfile.getChildNodes();
+            AtomicReference<String> profileID= new AtomicReference<>();
+            AtomicReference<Set<SerializedConfigurable>> policies = new AtomicReference<>();
+            AtomicReference<SerializedConfigurable> aggregator = new AtomicReference<>();
+            CompactionProfileConfig compactionProfileConfig;
+            XMLUtils.forEach(children, currentChild -> {
+                XMLUtils.forTag(XMLConfigTags.CONTEXT_PROFILE_ID, currentChild, item -> profileID.set(currentChild.getTextContent()));
+                XMLUtils.forTag(XMLConfigTags.POLICY_LIST_TAG, currentChild, item -> policies.set(this.preparePolicies(currentChild)));
+                XMLUtils.forTag(XMLConfigTags.AGGREGATOR_TAG, currentChild, item -> aggregator.set(this.prepareAggregator(currentChild)));
+            });
+            if (profileID.get() !=null) {
+                compactionProfileConfig = new CompactionProfileConfig(profileID.get(), policies.get(), aggregator.get());
+                compactionProfileConfigs.add(compactionProfileConfig);
             }
-            NodeList children = currentProfileDetails.getChildNodes();
-            String profileID=null;
-            Set<RegionSelectionPolicy> policies = null ;
-            PolicyAggregator aggregator = null;
-            CompactionProfile compactionProfile;
-            for (int j=0; j< children.getLength(); j++) {
-                Node currentChild = children.item(j);
-                if (currentChild.getNodeType() == Node.ELEMENT_NODE &&
-                        currentChild.getNodeName().equals(XMLConfigTags.CONTEXT_PROFILE_ID.name)) {
-                    profileID = currentChild.getTextContent();
-                }
-                if (currentChild.getNodeType() == Node.ELEMENT_NODE &&
-                        currentChild.getNodeName().equals(XMLConfigTags.POLICY_LIST_TAG.name)) {
-                    policies = this.preparePolicies(currentChild);
-                }
-                if (currentChild.getNodeType() == Node.ELEMENT_NODE &&
-                        currentChild.getNodeName().equals(XMLConfigTags.AGGREGATOR_TAG.name)) {
-                    aggregator = this.prepareAggregator(currentChild);
-                }
-            }
-            if (profileID!=null) {
-                compactionProfile = new CompactionProfile(profileID, policies, aggregator);
-                compactionProfiles.add(compactionProfile);
-            }
-        }
-        return compactionProfiles;
+        });
+        return compactionProfileConfigs;
     }
 
-    private PolicyAggregator prepareAggregator(Node aggregator) {
-        PolicyAggregator policyAggregator = null;
+    private SerializedConfigurable prepareAggregator(Node aggregator) {
+        SerializedConfigurable policyAggregator = null;
         AtomicReference<String> clazzToLoad = new AtomicReference<>();
         AtomicReference<List<Pair<String, String>>> configuration = new AtomicReference<>();
         XMLUtils.forEach(aggregator.getChildNodes(), p-> {
             XMLUtils.forTag(XMLConfigTags.CONFIG_LIST_TAGS, p, config -> {configuration.set(this.prepareConfigList(config));});
             XMLUtils.forTag(XMLConfigTags.NAME_TAG, p , name -> { clazzToLoad.set(name.getTextContent());});
         });
-        policyAggregator = this.loadAggregator(clazzToLoad.get());
-        policyAggregator.setFromConfig(configuration.get());
+        policyAggregator = new SerializedConfigurable(clazzToLoad.get(), configuration.get());
         return policyAggregator;
     }
 
-    private Set<RegionSelectionPolicy> preparePolicies(Node policies) {
-        Set<RegionSelectionPolicy> regionSelectionPolicySet = new HashSet<>();
+    private Set<SerializedConfigurable> preparePolicies(Node policies) {
+        Set<SerializedConfigurable> regionSelectionPolicySet = new HashSet<>();
         NodeList policyList  = policies.getChildNodes();
         XMLUtils.forEach(policyList, c-> {
             NodeList children = c.getChildNodes();
-            RegionSelectionPolicy regionSelectionPolicy;
             AtomicReference<String> clazzToLoad = new AtomicReference<>();
             AtomicReference<List<Pair<String, String>>> configuration = new AtomicReference<>();
             XMLUtils.forEach(children, item -> { XMLUtils.forTag(XMLConfigTags.CONFIG_LIST_TAGS, item, config -> {
@@ -130,9 +118,8 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
             XMLUtils.forEach(children, item -> { XMLUtils.forTag(XMLConfigTags.NAME_TAG, item , name -> {
                 clazzToLoad.set(name.getTextContent());
             }); });
-            regionSelectionPolicy = this.loadPolicy(clazzToLoad.get());
-            regionSelectionPolicy.setFromConfig(configuration.get());
-            regionSelectionPolicySet.add(regionSelectionPolicy);
+            SerializedConfigurable  regionSelectionPolicyToLoad = new SerializedConfigurable(clazzToLoad.get(), configuration.get());
+            regionSelectionPolicySet.add(regionSelectionPolicyToLoad);
         });
         return regionSelectionPolicySet;
     }

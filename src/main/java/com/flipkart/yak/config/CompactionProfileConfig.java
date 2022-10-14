@@ -1,33 +1,31 @@
 package com.flipkart.yak.config;
 
-import com.flipkart.yak.interfaces.Configurable;
-import com.flipkart.yak.interfaces.PolicyAggregator;
-import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import com.flipkart.yak.interfaces.Validable;
+import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hadoop.hbase.util.Pair;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
 @Getter @Setter
 @AllArgsConstructor
-public class CompactionProfile implements Validable, Configurable {
+public class CompactionProfileConfig implements Validable {
     @NonNull final String ID;
-    Set<RegionSelectionPolicy> policies;
-    @NonNull final PolicyAggregator aggregator;
+    Set<SerializedConfigurable> policies;
+    @NonNull final SerializedConfigurable aggregator;
+
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CompactionProfile)) return false;
-        CompactionProfile that = (CompactionProfile) o;
+        if (!(o instanceof CompactionProfileConfig)) return false;
+        CompactionProfileConfig that = (CompactionProfileConfig) o;
         return getID().equals(that.getID()) &&
+                Sets.difference(policies, that.getPolicies()).size() == 0 &&
                 getAggregator().equals(that.getAggregator());
     }
 
@@ -44,7 +42,11 @@ public class CompactionProfile implements Validable, Configurable {
     }
 
     @Override
-    public void setFromConfig(List<Pair<String, String>> configs) {
-
+    public String toString() {
+        return "{" +
+                "ID='" + ID + '\'' +
+                ", policies=" + policies +
+                ", aggregator=" + aggregator +
+                '}';
     }
 }

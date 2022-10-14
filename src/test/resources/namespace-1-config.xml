@@ -5,7 +5,7 @@
             <tableName>namespace:table</tableName>
             <startTime>18</startTime>
             <endTime>20</endTime>
-            <profile>some</profile>
+            <profile>testID</profile>
         </context>
         <context>
             <clusterID>zookeeper1:2181,zookeeper2:2181:/hbase</clusterID>
@@ -17,7 +17,7 @@
 
     <profiles>
         <profile>
-            <id>some</id>
+            <id>testID</id>
             <policies>
                 <policy>
                     <name>com.flipkart.yak.policies.NaiveRegionSelectionPolicy</name>

@@ -1,27 +1,24 @@
 package com.flipkart.yak.config.loader;
 
 import com.flipkart.yak.config.CompactionContext;
-import com.flipkart.yak.config.CompactionProfile;
+import com.flipkart.yak.config.CompactionProfileConfig;
 import com.flipkart.yak.config.CompactionTriggerConfig;
-import com.flipkart.yak.interfaces.PolicyAggregator;
-import com.flipkart.yak.interfaces.RegionSelectionPolicy;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hadoop.hbase.util.ReflectionUtils;
+import org.apache.hbase.thirdparty.com.google.common.collect.Sets;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
-public abstract class AbstractConfigLoader {
+public abstract class AbstractConfigLoader <Resource> {
     CompactionTriggerConfig config = null;
     List<String> resourceNames = new ArrayList<>();
 
 
-    abstract protected CompactionTriggerConfig loadConfig(String resourceName) throws ConfigurationException;
+    abstract Resource preCheckAndLoad(String resourceName) throws ConfigurationException;
+    public abstract List<CompactionProfileConfig> getProfiles(Resource resource) throws ConfigurationException;
+    public abstract List<CompactionContext> getCompactionContexts(Resource resource) throws ConfigurationException;
+    abstract void close(Resource resourceType);
 
     /**
      * initializes the config, ignores if issue in loading config
@@ -30,31 +27,38 @@ public abstract class AbstractConfigLoader {
         if (config == null) {
             List<CompactionTriggerConfig> compactionTriggerConfigs = new ArrayList<>();
             this.resourceNames.forEach(resource -> {
+                Resource r = null;
                 try {
-                    compactionTriggerConfigs.add(this.loadConfig(resource));
+                    r = this.preCheckAndLoad(resource);
+                    List<CompactionProfileConfig> profiles = this.getProfiles(r);
+                    List<CompactionContext> contexts = this.getCompactionContexts(r);
+                    compactionTriggerConfigs.add(this.buildCompactorTriggerConfig(profiles, contexts));
                 } catch (ConfigurationException e) {
                     log.warn("Found issue with {} while loading.. ignoring this resource: {}", resource, e.getMessage());
+                }
+                finally {
+                    if (r != null) {
+                        this.close(r);
+                    }
                 }
             });
             this.config = this.mergeConfig(compactionTriggerConfigs);
         }
     }
 
-    @SneakyThrows
-    protected final RegionSelectionPolicy loadPolicy(String regionSelectionPolicy) {
-        return (RegionSelectionPolicy)ReflectionUtils.newInstance(Class.forName(regionSelectionPolicy));
+    private CompactionTriggerConfig buildCompactorTriggerConfig(List<CompactionProfileConfig> profiles, List<CompactionContext> contexts) {
+        CompactionTriggerConfig.Builder builder = new CompactionTriggerConfig.Builder();
+        profiles.forEach(builder::withCompactionProfile);
+        contexts.forEach(builder::withCompactionContext);
+        return builder.build();
     }
 
-    @SneakyThrows
-    protected final PolicyAggregator loadAggregator(String policyAggregator) {
-        return (PolicyAggregator)ReflectionUtils.newInstance(Class.forName(policyAggregator));
-    }
 
     private CompactionTriggerConfig mergeConfig(List<CompactionTriggerConfig> compactionTriggerConfigs) {
         CompactionTriggerConfig.Builder builder = new CompactionTriggerConfig.Builder();
-        Set<CompactionProfile> allProfiles = new HashSet<>();
+        Set<CompactionProfileConfig> allProfiles = new HashSet<>();
         Set<CompactionContext> allContexts = new HashSet<>();
-        compactionTriggerConfigs.forEach(ctc -> allProfiles.addAll(ctc.getCompactionProfiles()));
+        compactionTriggerConfigs.forEach(ctc -> allProfiles.addAll(ctc.getCompactionProfileConfigs()));
         compactionTriggerConfigs.forEach(ctc -> allContexts.addAll(ctc.getCompactionContexts()));
         builder.withCompactionProfiles(allProfiles);
         builder.withCompactionContexts(allContexts);

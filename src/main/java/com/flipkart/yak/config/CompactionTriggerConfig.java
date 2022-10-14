@@ -14,22 +14,22 @@ import java.util.Set;
 public class CompactionTriggerConfig {
 
     Set<CompactionContext> compactionContexts;
-    Set<CompactionProfile> compactionProfiles;
+    Set<CompactionProfileConfig> compactionProfileConfigs;
 
     private CompactionTriggerConfig(){};
 
     public static class Builder {
 
         Set<CompactionContext> compactionContext = new HashSet<>();
-        Set<CompactionProfile> compactionProfile = new HashSet<>();
+        Set<CompactionProfileConfig> compactionProfileConfig = new HashSet<>();
 
         public Builder withCompactionContexts(Set<CompactionContext> compactionContexts) {
             compactionContexts.forEach(this::withCompactionContext);
             return this;
         }
 
-        public Builder withCompactionProfiles(Set<CompactionProfile> compactionProfiles) {
-            compactionProfiles.forEach(this::withCompactionProfile);
+        public Builder withCompactionProfiles(Set<CompactionProfileConfig> compactionProfileConfigs) {
+            compactionProfileConfigs.forEach(this::withCompactionProfile);
             return this;
         }
 
@@ -43,10 +43,10 @@ public class CompactionTriggerConfig {
             return this;
         }
 
-        public Builder withCompactionProfile(CompactionProfile profile) {
+        public Builder withCompactionProfile(CompactionProfileConfig profile) {
             try {
                 validateProfile(profile);
-                compactionProfile.add(profile);
+                compactionProfileConfig.add(profile);
             } catch (ConfigurationException e) {
                 log.error("Compaction Profile can not be validated, ignoring {} error: {} ", profile, e.getMessage());
             }
@@ -65,7 +65,7 @@ public class CompactionTriggerConfig {
         public CompactionTriggerConfig build() {
             CompactionTriggerConfig compactionTriggerConfig = new CompactionTriggerConfig();
             compactionTriggerConfig.compactionContexts = this.compactionContext;
-            compactionTriggerConfig.compactionProfiles = this.compactionProfile;
+            compactionTriggerConfig.compactionProfileConfigs = this.compactionProfileConfig;
             return compactionTriggerConfig;
         }
     }
