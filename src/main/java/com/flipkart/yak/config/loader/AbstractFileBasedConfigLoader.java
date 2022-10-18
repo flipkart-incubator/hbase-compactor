@@ -8,6 +8,10 @@ import java.io.File;
 @Slf4j
 public abstract class AbstractFileBasedConfigLoader extends AbstractConfigLoader<File>{
 
+    protected AbstractFileBasedConfigLoader() {
+        this.loadDefaults();
+    }
+
     /**
      * Takes a fileName and relies specific implementation to load and prepare a {CompactionTriggerConfig} object
      * @param fileName file that contains config, can be any implementation
@@ -31,5 +35,7 @@ public abstract class AbstractFileBasedConfigLoader extends AbstractConfigLoader
     protected void close(File file) {
 
     }
+
+    public abstract void loadDefaults();
 
 }

@@ -21,6 +21,7 @@ public class SimpleProfileInventory implements ProfileInventory  {
 
     @Override
     public CompactionProfile loadProfileFromName(CompactionProfileConfig compactionProfileConfig) throws ClassNotFoundException {
+        log.info("loading {}", compactionProfileConfig.getID());
         PolicyAggregator aggregator = (PolicyAggregator) ReflectionUtils.newInstance(Class.forName(compactionProfileConfig.getAggregator().getFirst()));
         Set<RegionSelectionPolicy> regionSelectionPolicies = new HashSet<>();
         for(SerializedConfigurable serializedConfigurable : compactionProfileConfig.getPolicies()) {
@@ -28,12 +29,14 @@ public class SimpleProfileInventory implements ProfileInventory  {
             regionSelectionPolicy.setFromConfig(serializedConfigurable.getSecond());
             regionSelectionPolicies.add(regionSelectionPolicy);
         }
+        log.info("Loaded {}", regionSelectionPolicies.size());
         aggregator.setFromConfig(compactionProfileConfig.getAggregator().getSecond());
         return new CompactionProfile(compactionProfileConfig.getID(), regionSelectionPolicies, aggregator);
     }
 
     @Override
     public void add(CompactionProfile compactionProfile) {
+        log.debug("adding {}", compactionProfile);
         profileInventory.put(compactionProfile.getID(), compactionProfile);
     }
 

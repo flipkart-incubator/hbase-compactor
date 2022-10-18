@@ -8,7 +8,7 @@ public enum XMLConfigTags {
     CONTEXT_TABLE_NAME("tableName"),
     CONTEXT_NAMESPACE("nameSpace"),
     CONTEXT_RSGROUP("rsGroup"),
-    CONTEXT_PROFILE_ID("id"),
+    CONTEXT_PROFILE_ID("profileID"),
     CONTEXT_START_TIME("startTime"),
     CONTEXT_END_TIME("endTime"),
     PROFILE_LIST_TAG( "profile"),

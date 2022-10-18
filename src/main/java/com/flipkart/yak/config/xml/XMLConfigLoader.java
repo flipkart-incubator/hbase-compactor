@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
 
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    private final String DEFAULT_RESOURCE_FILE = "compactor-config.xml";
 
     private Document loadDocument(File file) throws ConfigurationException {
         Document doc = null;
@@ -153,9 +154,9 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
         if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_RSGROUP)) {
             compactionContext.setRsGroup(configLoadedMap.get(XMLConfigTags.CONTEXT_RSGROUP));
         } else if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_NAMESPACE)) {
-            compactionContext.setRsGroup(configLoadedMap.get(XMLConfigTags.CONTEXT_NAMESPACE));
+            compactionContext.setNameSpace(configLoadedMap.get(XMLConfigTags.CONTEXT_NAMESPACE));
         } else if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_TABLE_NAME)) {
-            compactionContext.setRsGroup(configLoadedMap.get(XMLConfigTags.CONTEXT_TABLE_NAME));
+            compactionContext.setTableName(configLoadedMap.get(XMLConfigTags.CONTEXT_TABLE_NAME));
         }
     }
 
@@ -174,4 +175,8 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
         return configLoadedMap;
     }
 
+    @Override
+    public void loadDefaults() {
+        this.addResource(this.DEFAULT_RESOURCE_FILE);
+    }
 }
