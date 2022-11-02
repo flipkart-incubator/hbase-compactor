@@ -148,11 +148,9 @@ public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
     }
 
     private List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
-                                            Set<String> compactingRegions, List<String> allRegions)
-            throws IOException {
+                                            Set<String> compactingRegions, List<String> allRegions) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();
-
         for (String encodedRegion : compactingRegions) {
             if (regionFNHostnameMapping.containsKey(encodedRegion)) {
                 regionFNHostnameMapping.get(encodedRegion).forEach(server -> {
@@ -177,8 +175,9 @@ public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
                         break;
                     }
                 }
-                if (shouldAdd) {
+                if (shouldAdd && regionFNHostnameMapping.containsKey(encodedRegion)) {
                     regionFNHostnameMapping.get(encodedRegion).forEach(server -> {
+                        serversForThisBatch.putIfAbsent(server, new MutableInt(0));
                         serversForThisBatch.get(server).increment();
                         log.debug("setting {} scheduled compactions for server {}", serversForThisBatch.get(server), server);
                     });

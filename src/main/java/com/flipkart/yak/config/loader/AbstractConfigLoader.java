@@ -74,6 +74,14 @@ public abstract class AbstractConfigLoader <Resource> {
         resourceNames.add(resourceName);
     }
 
+
+    /**
+     * Utility in case default classes needs to escaped
+     */
+    public void clearDefaultResources() {
+        resourceNames.clear();
+    }
+
     /**
      * Takes a list of config resourceNames and stores it in memory
      * @param resourceNames

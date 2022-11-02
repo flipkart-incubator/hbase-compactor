@@ -16,6 +16,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -25,12 +26,13 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
     DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
     private final String DEFAULT_RESOURCE_FILE = "compactor-config.xml";
 
-    private Document loadDocument(File file) throws ConfigurationException {
+    private Document loadDocument(InputStream file) throws ConfigurationException {
         Document doc = null;
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             doc = db.parse(file);
             doc.getDocumentElement().normalize();
+            file.close();
         } catch (SAXException | ParserConfigurationException | IOException e) {
             log.error(e.getMessage());
             throw new ConfigurationException(e);
@@ -41,13 +43,13 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
 
     @Override
     public List<CompactionProfileConfig> getProfiles(File resource) throws ConfigurationException {
-        Document doc = this.loadDocument(resource);
+        Document doc = this.loadDocument(ClassLoader.getSystemResourceAsStream(resource.getName()));
         return this.getAllProfiles(doc);
     }
 
     @Override
     public List<CompactionContext> getCompactionContexts(File resource) throws ConfigurationException {
-        Document doc = this.loadDocument(resource);
+        Document doc = this.loadDocument(ClassLoader.getSystemResourceAsStream(resource.getName()));
         return this.getAllContexts(doc);
     }
 

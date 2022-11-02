@@ -10,7 +10,8 @@ class XMLConfigLoderTest {
     @Test
     void testBasicLoadingWithXML() throws ConfigurationException {
         AbstractConfigLoader configLoader = new XMLConfigLoader();
-        configLoader.addResource("src/test/resources/namespace-1-config.xml");
+        configLoader.clearDefaultResources();
+        configLoader.addResource("namespace-1-config.xml");
         CompactionTriggerConfig config1 = configLoader.getConfig();
         CompactionTriggerConfig config2 = configLoader.getConfig();
         CompactionTriggerConfig compactionTriggerConfig = configLoader.getConfig();
@@ -27,7 +28,8 @@ class XMLConfigLoderTest {
     @Test
     void testBasicLoadingWithXML2() throws ConfigurationException {
         AbstractConfigLoader configLoader = new XMLConfigLoader();
-        configLoader.addResource("src/test/resources/namespace-2-config.xml");
+        configLoader.clearDefaultResources();
+        configLoader.addResource("namespace-2-config.xml");
         CompactionTriggerConfig config1 = configLoader.getConfig();
         CompactionTriggerConfig config2 = configLoader.getConfig();
         CompactionTriggerConfig compactionTriggerConfig = configLoader.getConfig();

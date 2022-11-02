@@ -32,6 +32,7 @@ public class RegionByRegionCompactionJob extends CompactionJob{
     void doCompact(Report report) throws CompactionRuntimeException {
         for (Map.Entry<String, Pair<RegionInfo, RegionEligibilityStatus>> entry : report.entrySet()) {
             try {
+                log.debug("calling major compaction for {}", entry.getKey());
                 this.admin.majorCompactRegion(entry.getValue().getFirst().getEncodedNameAsBytes());
             } catch (IOException e) {
                 log.error("Could not trigger compaction for {}", entry.getKey());

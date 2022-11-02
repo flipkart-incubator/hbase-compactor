@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.File;
+import java.net.URL;
 
 @Slf4j
 public abstract class AbstractFileBasedConfigLoader extends AbstractConfigLoader<File>{
@@ -20,15 +21,15 @@ public abstract class AbstractFileBasedConfigLoader extends AbstractConfigLoader
      */
     @Override
     protected File preCheckAndLoad(String fileName) throws ConfigurationException {
-        File resourceFile = new File(fileName);
-        if (!resourceFile.canRead()) {
+        URL resourceFile = Thread.currentThread().getContextClassLoader().getResource(fileName);
+        if (resourceFile == null) {
             throw new ConfigurationException("Can not read file " + fileName);
         }
-
-        if (!resourceFile.exists()) {
+        File file = new File(resourceFile.getFile());
+        if (!file.exists()) {
             throw new ConfigurationException("Can not read file " + fileName);
         }
-        return resourceFile;
+        return file;
     }
 
     @Override

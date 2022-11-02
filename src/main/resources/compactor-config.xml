@@ -1,0 +1,31 @@
+<configuration>
+    <contexts>
+        <context>
+            <clusterID>localhost:2181:/hbase</clusterID>
+            <tableName>local_compactor:table_1</tableName>
+            <startTime>19</startTime>
+            <endTime>20</endTime>
+            <profileID>base</profileID>
+        </context>
+    </contexts>
+    <profiles>
+        <profile>
+            <profileID>base</profileID>
+            <policies>
+                <policy>
+                    <name>com.flipkart.yak.policies.NaiveRegionSelectionPolicy</name>
+                    <configurations>
+                        <configuration>
+                            <name>hello</name>
+                            <value>world</value>
+                        </configuration>
+                    </configurations>
+                </policy>
+            </policies>
+            <aggregator>
+                <name>com.flipkart.yak.aggregator.SimpleUnionAggregator</name>
+                <configurations></configurations>
+            </aggregator>
+        </profile>
+    </profiles>
+</configuration>
