@@ -2,6 +2,7 @@ package com.flipkart.yak.config;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 import java.util.Objects;
@@ -9,8 +10,11 @@ import java.util.Objects;
 @Getter @Setter
 @AllArgsConstructor
 public class CompactionSchedule {
-    private final int startHourOfTheDay;
-    private final int endHourOfTheDay;
+    @NonNull
+    private final float startHourOfTheDay;
+    @NonNull
+    private final float endHourOfTheDay;
+
 
     @Override
     public boolean equals(Object o) {

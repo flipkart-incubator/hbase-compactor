@@ -3,8 +3,8 @@
         <context>
             <clusterID>localhost:2181:/hbase</clusterID>
             <tableName>table_1</tableName>
-            <startTime>19</startTime>
-            <endTime>20</endTime>
+            <startTime>21.00</startTime>
+            <endTime>22</endTime>
             <profileID>base</profileID>
         </context>
     </contexts>
@@ -21,10 +21,18 @@
                         </configuration>
                     </configurations>
                 </policy>
+                <policy>
+                    <name>com.flipkart.yak.policies.TimestampAwareSelectionPolicy</name>
+                </policy>
             </policies>
             <aggregator>
-                <name>com.flipkart.yak.aggregator.SimpleUnionAggregator</name>
-                <configurations></configurations>
+                <name>com.flipkart.yak.aggregator.ChainReportAggregator</name>
+                <configurations>
+                    <configuration>
+                        <name>aggregator.chain.policy.order</name>
+                        <value>com.flipkart.yak.policies.TimestampAwareSelectionPolicy,com.flipkart.yak.policies.NaiveRegionSelectionPolicy</value>
+                    </configuration>
+                </configurations>
             </aggregator>
         </profile>
     </profiles>

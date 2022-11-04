@@ -5,6 +5,7 @@ import com.flipkart.yak.commons.ConnectionInventory;
 import com.flipkart.yak.commons.RegionEligibilityStatus;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
+import com.flipkart.yak.interfaces.CompactionExecutable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.client.Admin;
@@ -16,14 +17,13 @@ import java.io.IOException;
 import java.util.Map;
 
 @Slf4j
-public class RegionByRegionCompactionJob extends CompactionJob{
+public class RegionByRegionThreadedCompactionJob implements CompactionExecutable {
 
     private Connection connection;
     private Admin admin;
 
     @Override
-    public void init(CompactionContext context) throws ConfigurationException {
-        super.init(context);
+    public void initResources(CompactionContext context) throws ConfigurationException {
         try {
             this.connection = ConnectionInventory.getInstance().get(context.getClusterID());
             this.admin = this.connection.getAdmin();
@@ -33,7 +33,8 @@ public class RegionByRegionCompactionJob extends CompactionJob{
     }
 
     @Override
-    void doCompact(Report report) throws CompactionRuntimeException {
+    public void doCompact(Report report) throws CompactionRuntimeException {
+        log.debug("received {} regions for compaction", report.size());
         for (Map.Entry<String, Pair<RegionInfo, RegionEligibilityStatus>> entry : report.entrySet()) {
             try {
                 log.debug("calling major compaction for {}", entry.getKey());
@@ -46,7 +47,7 @@ public class RegionByRegionCompactionJob extends CompactionJob{
     }
 
     @Override
-    void releaseResources() {
+    public void releaseResources() {
         try {
             this.connection.close();
         } catch (IOException e) {

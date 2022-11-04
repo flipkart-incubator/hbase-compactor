@@ -86,7 +86,7 @@ public class NaiveRegionSelectionPolicy extends BasePolicy {
     }
 
     List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
-                                            Set<String> compactingRegions, List<String> allRegions) throws IOException {
+                                            Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();
         for (String encodedRegion : compactingRegions) {
@@ -99,27 +99,27 @@ public class NaiveRegionSelectionPolicy extends BasePolicy {
             }
         }
         log.debug("starting to analyse {} regions - this is total number of regions present for this target", allRegions.size());
-        for (String encodedRegion : allRegions) {
-            if (!compactingRegions.contains(encodedRegion) && encodedRegions.size() < (
+        for (RegionInfo region : allRegions) {
+            if (!compactingRegions.contains(region.getEncodedName()) && encodedRegions.size() < (
                     MAX_PARALLEL_COMPACTION_PER_TARGET - compactingRegions.size())) {
-                if (!regionFNHostnameMapping.containsKey(encodedRegion)) {
-                    log.warn("No favored nodes for region: " + encodedRegion);
+                if (!regionFNHostnameMapping.containsKey(region.getEncodedName())) {
+                    log.warn("No favored nodes for region: " + region.getEncodedName());
                 }
                 boolean shouldAdd = true;
-                for (String fn : regionFNHostnameMapping.get(encodedRegion)) {
+                for (String fn : regionFNHostnameMapping.get(region.getEncodedName())) {
                     if (serversForThisBatch.containsKey(fn) && serversForThisBatch.get(fn).intValue() >= MAX_PARALLEL_COMPACTION_PER_SERVER) {
-                        log.debug("max parallel compaction count reached for this RS {}, hence not adding {}", fn, encodedRegion);
+                        log.debug("max parallel compaction count reached for this RS {}, hence not adding {}", fn, region.getEncodedName());
                         shouldAdd = false;
                         break;
                     }
                 }
-                if (shouldAdd && regionFNHostnameMapping.containsKey(encodedRegion)) {
-                    regionFNHostnameMapping.get(encodedRegion).forEach(server -> {
+                if (shouldAdd && regionFNHostnameMapping.containsKey(region.getEncodedName())) {
+                    regionFNHostnameMapping.get(region.getEncodedName()).forEach(server -> {
                         serversForThisBatch.putIfAbsent(server, new MutableInt(0));
                         serversForThisBatch.get(server).increment();
                         log.debug("setting {} scheduled compactions for server {}", serversForThisBatch.get(server), server);
                     });
-                    encodedRegions.add(encodedRegion);
+                    encodedRegions.add(region.getEncodedName());
                 }
             }
         }

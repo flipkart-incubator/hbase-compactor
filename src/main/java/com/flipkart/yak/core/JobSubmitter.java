@@ -40,13 +40,13 @@ public class JobSubmitter {
     public void start() {
         this.preLoadConnections();
         for (CompactionContext compactionContext : this.compactionTriggerConfig.getCompactionContexts()) {
-            CompactionJob compactionJob = new RegionByRegionCompactionJob();
+            ThreadedCompactionJob threadedCompactionJob = new ThreadedCompactionJob();
             try {
-                compactionJob.init(compactionContext);
+                threadedCompactionJob.init(compactionContext);
             } catch (ConfigurationException e) {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
-            compactors.add(this.executorService.submit(compactionJob));
+            compactors.add(this.executorService.submit(threadedCompactionJob));
         }
         this.executorService.shutdown();
     }

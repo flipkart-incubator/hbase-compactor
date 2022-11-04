@@ -148,8 +148,8 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
 
     private CompactionContext prepareCompactionContext(NodeList contextElements) {
         Map<XMLConfigTags, String> configLoadedMap = this.prepareConfigMap(contextElements);
-        int startTime = Integer.parseInt(configLoadedMap.get(XMLConfigTags.CONTEXT_START_TIME));
-        int endTime = Integer.parseInt(configLoadedMap.get(XMLConfigTags.CONTEXT_END_TIME));
+        float startTime = Float.parseFloat(configLoadedMap.get(XMLConfigTags.CONTEXT_START_TIME));
+        float endTime = Float.parseFloat(configLoadedMap.get(XMLConfigTags.CONTEXT_END_TIME));
         CompactionSchedule compactionSchedule = new CompactionSchedule(startTime, endTime);
         String cluster = configLoadedMap.get(XMLConfigTags.CONTEXT_CLUSTER_ID);
         String profile = configLoadedMap.get(XMLConfigTags.CONTEXT_PROFILE_ID);

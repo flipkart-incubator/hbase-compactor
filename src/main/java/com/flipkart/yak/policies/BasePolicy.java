@@ -45,10 +45,12 @@ public abstract class BasePolicy implements RegionSelectionPolicy {
     @Override
     public Report getReport(CompactionContext context, Connection connection, Report report) throws CompactionRuntimeException {
         try {
-            List<String> allRegions = new ArrayList<>(report.keySet());
-            Set<String> compactingRegions = this.getCompactingRegion(allRegions, admin);
+            admin = connection.getAdmin();
+            List<RegionInfo> allRegions = report.values().stream().map(Pair::getFirst).collect(Collectors.toList());
+            List<String> allEncodedRegionName = allRegions.stream().map(RegionInfo::getEncodedName).collect(Collectors.toList());
+            Set<String> compactingRegions = this.getCompactingRegion(allEncodedRegionName, admin);
             Map<String, List<String>> regionFNMapping = new WeakHashMap<>();
-            this.refreshRegionToHostNameMapping(admin, allRegions, regionFNMapping);
+            this.refreshRegionToHostNameMapping(admin, allEncodedRegionName, regionFNMapping);
             List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions);
             return this.prepareReport(report.entrySet().stream().map(e -> e.getValue().getFirst()).collect(Collectors.toList()), eligibleRegions);
         }catch (IOException e) {
@@ -110,5 +112,5 @@ public abstract class BasePolicy implements RegionSelectionPolicy {
 
 
     abstract List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
-                                                     Set<String> compactingRegions, List<String> allRegions) throws IOException;
+                                                     Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException;
 }
