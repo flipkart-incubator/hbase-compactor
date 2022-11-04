@@ -1,9 +1,11 @@
 package com.flipkart.yak.interfaces;
 
 import com.flipkart.yak.commons.Report;
+import com.flipkart.yak.config.CompactionContext;
+import com.flipkart.yak.core.CompactionRuntimeException;
 
-import java.util.List;
+import java.util.Set;
 
 public interface PolicyAggregator extends Configurable {
-    Report aggregateReport(List<Report> reports);
+    Report applyAndCollect(Set<RegionSelectionPolicy> allPolicies, CompactionContext compactionContext) throws CompactionRuntimeException;
 }

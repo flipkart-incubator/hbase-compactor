@@ -7,4 +7,5 @@ import org.apache.hadoop.hbase.client.Connection;
 
 public interface RegionSelectionPolicy extends Configurable {
     Report getReport(CompactionContext context, Connection connection) throws CompactionRuntimeException;
+    Report getReport(CompactionContext context, Connection connection, Report report) throws CompactionRuntimeException;
 }

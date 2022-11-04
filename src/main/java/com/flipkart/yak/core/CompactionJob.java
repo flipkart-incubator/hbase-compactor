@@ -26,7 +26,6 @@ public abstract class CompactionJob implements Submittable {
 
     private Set<RegionSelectionPolicy> policies;
     private PolicyAggregator aggregator;
-    private Connection connection;
     private CompactionSchedule compactionSchedule;
     private CompactionContext compactionContext;
     private long DEFAULT_DELAY_BETWEEN_EACH_RUN = DateUtils.MILLIS_PER_MINUTE;
@@ -34,7 +33,6 @@ public abstract class CompactionJob implements Submittable {
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
-       connection = ConnectionInventory.getInstance().get(context.getClusterID());
        compactionSchedule = context.getCompactionSchedule();
        CompactionProfile profileForThis = ProfileInventoryFactory.getProfileInventory().get(context.getCompactionProfileID());
        aggregator = profileForThis.getAggregator();
@@ -50,10 +48,9 @@ public abstract class CompactionJob implements Submittable {
         log.info("starting compact-cron for : {}", this.getCompactionContext());
 
         while(true) {
-            while (!this.hasTimedOut(compactionSchedule)) {
-                List<Report> reports = this.getReportFromPolicies();
-                Report report = this.aggregateReport(reports);
+            while (!this.hasTimedOut(compactionSchedule) && this.canStart(compactionSchedule)) {
                 try {
+                    Report report = this.aggregateReport();
                     this.doCompact(report);
                     Thread.sleep(DEFAULT_DELAY_BETWEEN_EACH_RUN);
                 } catch (CompactionRuntimeException | InterruptedException e) {
@@ -72,23 +69,11 @@ public abstract class CompactionJob implements Submittable {
         }
     }
 
-    private List<Report> getReportFromPolicies() {
-        List<Report> reports = new ArrayList<>();
-        for (RegionSelectionPolicy policy : this.policies) {
-            try {
-                reports.add(policy.getReport(this.compactionContext, this.connection));
-            } catch (CompactionRuntimeException e) {
-                log.error("could not get report by {} for {}", policy.getClass().getName(), compactionContext);
-            }
-        }
-        return reports;
+    private Report aggregateReport() throws CompactionRuntimeException {
+        return this.aggregator.applyAndCollect(this.getPolicies(), this.compactionContext);
     }
 
-    private Report aggregateReport(List<Report> reports) {
-        return this.aggregator.aggregateReport(reports);
-    }
-
-    private long getStartOfTheDay() {
+    private long  getStartOfTheDay() {
         Calendar calendar = DateUtils.toCalendar(Date.from(Instant.now()));
         Calendar todaysDate = DateUtils.truncate(calendar, Calendar.DATE);
         return todaysDate.getTimeInMillis();
@@ -113,6 +98,16 @@ public abstract class CompactionJob implements Submittable {
             return false;
         }
         return true;
+    }
+
+    private boolean canStart(CompactionSchedule compactionSchedule) {
+        long baseTime = this.getStartOfTheDay();
+        long currTime = System.currentTimeMillis();
+        long startTime = baseTime + ((long)compactionSchedule.getStartHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
+        if (currTime >= startTime) {
+            return true;
+        }
+        return false;
     }
 
     abstract void doCompact(Report report) throws CompactionRuntimeException;

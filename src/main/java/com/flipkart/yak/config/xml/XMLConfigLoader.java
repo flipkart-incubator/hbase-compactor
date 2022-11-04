@@ -130,12 +130,18 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
     private List<Pair<String, String>> prepareConfigList(Node node) {
         List<Pair<String, String>> configs = new ArrayList<>();
         XMLUtils.forEach(node.getChildNodes(),  config -> {
+            AtomicReference<String> name = new AtomicReference<>();
+            AtomicReference<String> value = new AtomicReference<>();
             XMLUtils.forEach(config.getChildNodes(), item -> {
-                String name = XMLUtils.forTagReturnString(XMLConfigTags.NAME_TAG, item, Node::getTextContent);
-                String value = XMLUtils.forTagReturnString(XMLConfigTags.VALUE_TAG, item, Node::getTextContent);
-                Pair<String, String> pair = new Pair<>(name, value);
-                configs.add(pair);
+                if (XMLUtils.forTagReturnString(XMLConfigTags.NAME_TAG, item, Node::getTextContent) != null ) {
+                    name.set(XMLUtils.forTagReturnString(XMLConfigTags.NAME_TAG, item, Node::getTextContent));
+                }
+                if (XMLUtils.forTagReturnString(XMLConfigTags.VALUE_TAG, item, Node::getTextContent) != null ) {
+                    value.set(XMLUtils.forTagReturnString(XMLConfigTags.VALUE_TAG, item, Node::getTextContent));
+                }
             });
+            Pair<String, String> pair = new Pair<>(name.get(), value.get());
+            configs.add(pair);
         });
         return configs;
     }

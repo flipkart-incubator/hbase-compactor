@@ -1,10 +1,5 @@
 package com.flipkart.yak.policies;
 
-import com.flipkart.yak.commons.RegionEligibilityStatus;
-import com.flipkart.yak.commons.Report;
-import com.flipkart.yak.config.CompactionContext;
-import com.flipkart.yak.core.CompactionRuntimeException;
-import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.hbase.ServerName;
@@ -21,8 +16,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
-
+public class NaiveRegionSelectionPolicy extends BasePolicy {
 
     private final static String HBASE_NS = "hbase";
     private final static String META_TABLE = "meta";
@@ -36,37 +30,21 @@ public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
 
     @Override
     public void setFromConfig(List<Pair<String, String>> configs) {
-        log.info("Max Parallel Compaction for a server allowed {}", MAX_PARALLEL_COMPACTION_PER_SERVER);
-    }
+        if(configs!= null) {
+            configs.forEach(pair -> {
+                if (pair.getFirst().equals(KEY_MAX_PARALLEL_COMPACTION)) {
+                    MAX_PARALLEL_COMPACTION_PER_SERVER = Integer.parseInt(pair.getSecond());
+                }
 
-    @Override
-    public Report getReport(CompactionContext context, Connection connection) throws CompactionRuntimeException {
-        try {
-            Admin admin = connection.getAdmin();
-            TableName tableName= TableName.valueOf(context.getTableName());
-            List<RegionInfo> allRegionInfoList = this.getAllRegions(tableName,admin);
-            List<String> allRegions = allRegionInfoList.stream().map(RegionInfo::getEncodedName).collect(Collectors.toList());
-            Set<String> compactingRegions = this.getCompactingRegion(allRegions, admin);
-            Map<String, List<String>> regionFNMapping = new WeakHashMap<>();
-            this.refreshRegionToHostNameMapping(admin, tableName, allRegions, regionFNMapping);
-            List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions);
-            return this.prepareReport(allRegionInfoList, eligibleRegions);
-        } catch (IOException e) {
-            log.error("Exception while getting eligibility report {}", e.getMessage());
-            throw new CompactionRuntimeException(e);
+                if (pair.getFirst().equals(KEY_MAX_PARALLEL_COMPACTION_FOR_TABLE)) {
+                    MAX_PARALLEL_COMPACTION_PER_TARGET = Integer.parseInt(pair.getSecond());
+                }
+            });
         }
-    }
-
-    private Report prepareReport(List<RegionInfo> allRegionInfo, List<String> eligibleRegions) {
-        Report finalReport = new Report();
-        Set<String> setOfRegionKeys = new HashSet<>(eligibleRegions);
-        allRegionInfo.forEach(region -> {
-            if (setOfRegionKeys.contains(region.getEncodedName())) {
-                finalReport.put(region.getEncodedName(), new Pair<>(region, RegionEligibilityStatus.GREEN));
-            }
-        });
-        log.info("{} regions present in final report prepared by {}", finalReport.size(), this.getClass().getName());
-        return finalReport;
+        else {
+            log.warn("config passed to this policy is null, please check config file");
+        }
+        log.info("Max Parallel Compaction for a server allowed {}", MAX_PARALLEL_COMPACTION_PER_SERVER);
     }
 
     private List<String> getFavoredNodesList(byte[] favoredNodes) throws IOException {
@@ -100,31 +78,6 @@ public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
         } while (results.length > 0);
     }
 
-    private List<RegionInfo> getAllRegions(TableName tableName, Admin admin) throws IOException {
-        List<RegionInfo> allRegions = admin.getRegions(tableName);
-        log.debug("found {} regions for table {}", allRegions.size(), tableName);
-        return allRegions;
-    }
-
-    private Map<String, List<String>> refreshRegionToHostNameMapping(Admin admin, TableName tableName,
-                                                                     List<String> allRegions,
-                                                                     Map<String, List<String>> regionFNHostnameMapping)
-            throws IOException {
-
-        for (ServerName sn : admin.getRegionServers()) {
-            List<RegionInfo> regions = admin.getRegions(sn);
-            regions.forEach(region -> {
-                if (allRegions.contains(region.getEncodedName())) {
-                    regionFNHostnameMapping.putIfAbsent(region.getEncodedName(), new ArrayList<>());
-                    regionFNHostnameMapping.get(region.getEncodedName()).add(sn.getHostname());
-                    log.debug("adding region {} for Favoured Node {}", region.getEncodedName(), sn.getHostname());
-                }
-            });
-        }
-        log.info("there are {} keys present in region-To-Favoured-Node mapping,ideally it should be total number of regions", regionFNHostnameMapping.size());
-        return regionFNHostnameMapping;
-    }
-
     private Scan getScan(Optional<PrefixFilter> filterOptional) {
         Scan scan = new Scan();
         scan.addColumn(NaiveRegionSelectionPolicy.INFO_CF, NaiveRegionSelectionPolicy.FN_CQ);
@@ -132,22 +85,7 @@ public class NaiveRegionSelectionPolicy implements RegionSelectionPolicy {
         return scan;
     }
 
-    private Set<String> getCompactingRegion(List<String> regions, Admin admin) throws IOException {
-        Set<String> compactingRegions = new HashSet<>();
-        for (String region : regions) {
-            CompactionState compactionState = admin.getCompactionStateForRegion(Bytes.toBytes(region));
-            log.debug("Compaction state: " + region + " - " + compactionState);
-            if (compactionState.equals(CompactionState.MAJOR) || compactionState
-                    .equals(CompactionState.MAJOR_AND_MINOR)) {
-                log.debug("In Progress compaction for: " + region);
-                compactingRegions.add(region);
-            }
-        }
-        log.info("Found {} compacting regions ", compactingRegions.size());
-        return compactingRegions;
-    }
-
-    private List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
+    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
                                             Set<String> compactingRegions, List<String> allRegions) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();

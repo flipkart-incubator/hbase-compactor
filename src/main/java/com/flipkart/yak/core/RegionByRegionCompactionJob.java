@@ -1,12 +1,14 @@
 package com.flipkart.yak.core;
 
 
+import com.flipkart.yak.commons.ConnectionInventory;
 import com.flipkart.yak.commons.RegionEligibilityStatus;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.RegionInfo;
 import org.apache.hadoop.hbase.util.Pair;
 
@@ -16,13 +18,15 @@ import java.util.Map;
 @Slf4j
 public class RegionByRegionCompactionJob extends CompactionJob{
 
+    private Connection connection;
     private Admin admin;
 
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
         super.init(context);
         try {
-            this.admin = this.getConnection().getAdmin();
+            this.connection = ConnectionInventory.getInstance().get(context.getClusterID());
+            this.admin = this.connection.getAdmin();
         } catch (IOException e) {
             throw new ConfigurationException(e.getMessage());
         }
@@ -44,7 +48,7 @@ public class RegionByRegionCompactionJob extends CompactionJob{
     @Override
     void releaseResources() {
         try {
-            this.getConnection().close();
+            this.connection.close();
         } catch (IOException e) {
             log.error(e.getMessage());
         }
