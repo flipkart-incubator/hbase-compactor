@@ -13,7 +13,7 @@
             <profileID>testID</profileID>
             <policies>
                 <policy>
-                    <name>com.flipkart.yak.policies.NaiveRegionSelectionPolicy</name>
+                    <name>com.flipkart.yak.fake.NaiveRegionSelectionPolicy</name>
                     <configurations>
                         <configuration>
                             <name>compactor.policy.max.parallel.compaction.per.server</name>

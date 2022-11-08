@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Pair;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +70,7 @@ public class ConnectionInventory extends HashMap<String, Connection> {
         if (hostandpath != null) {
             String[] listOfZookeeper = hostandpath.getFirst().split(ZOOKEEPER_HOST_SEPARATOR);
             List<String> listedFormat = Lists.newArrayList(listOfZookeeper);
+            Collections.sort(listedFormat);
             return listedFormat;
         }
         return null;

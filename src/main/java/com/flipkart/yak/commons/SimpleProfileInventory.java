@@ -41,8 +41,8 @@ public class SimpleProfileInventory implements ProfileInventory  {
     }
 
     @Override
-    public void handleExceptionWithoutThrowing(Exception e) {
-        log.error(e.getMessage());
+    public void handleExceptionWithoutThrowing(ClassNotFoundException e) {
+        log.error("Class Not Found: {}", e.getMessage());
     }
 
 

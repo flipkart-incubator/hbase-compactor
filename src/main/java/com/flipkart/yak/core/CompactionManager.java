@@ -3,6 +3,7 @@ package com.flipkart.yak.core;
 import com.flipkart.yak.commons.CompactionProfile;
 import com.flipkart.yak.commons.ProfileInventoryFactory;
 import com.flipkart.yak.commons.Report;
+import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
 import com.flipkart.yak.interfaces.CompactionExecutable;

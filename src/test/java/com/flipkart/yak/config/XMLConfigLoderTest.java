@@ -44,4 +44,19 @@ class XMLConfigLoderTest {
         assert compactionProfileConfig.getPolicies().size() == 1;
         assert compactionProfileConfig.getPolicies().iterator().next().getFirst().equals("com.flipkart.yak.policies.NaiveRegionSelectionPolicy");
     }
+
+    @Test
+    void testBasicLoadingWithXMLWithMultipleResources() throws ConfigurationException {
+        AbstractConfigLoader configLoader = new XMLConfigLoader();
+        configLoader.clearDefaultResources();
+        configLoader.addResource("namespace-2-config.xml");
+        configLoader.addResource("namespace-1-config.xml");
+        CompactionTriggerConfig config1 = configLoader.getConfig();
+        CompactionTriggerConfig config2 = configLoader.getConfig();
+        CompactionTriggerConfig compactionTriggerConfig = configLoader.getConfig();
+        CompactionProfileConfig compactionProfileConfig = compactionTriggerConfig.compactionProfileConfigs.iterator().next();
+        assert config1 == config2;
+        assert compactionTriggerConfig.compactionContexts.size() == 3;
+        assert compactionProfileConfig.getID().equals("testID");
+    }
 }

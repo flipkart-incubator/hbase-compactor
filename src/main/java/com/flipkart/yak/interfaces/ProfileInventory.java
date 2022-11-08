@@ -9,7 +9,7 @@ public interface ProfileInventory {
 
     CompactionProfile loadProfileFromName(CompactionProfileConfig compactionProfileConfig) throws ClassNotFoundException;
     void add(CompactionProfile compactionProfile);
-    void handleExceptionWithoutThrowing(Exception e);
+    void handleExceptionWithoutThrowing(ClassNotFoundException e);
     CompactionProfile get(String key);
 
     default void reload(CompactionTriggerConfig compactionTriggerConfig) {
