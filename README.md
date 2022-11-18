@@ -9,10 +9,48 @@ Hbase Major compaction is a resource intensive operation. One would like to cont
 
 ## Build
 ```
-mvn clean package
+mvn clean install 
 ```
 
-## Run
+## Sample Config File
 ```
-java -jar <jar> <zk quorum> <zk node> <table name> <batch size> <sleep b/w batch in sec>
+<configuration>
+    <contexts>
+        <context>
+            <clusterID>preprod-id-yak-perf1-ch-zk-1:2181,preprod-id-yak-perf1-ch-zk-2:2181,preprod-id-yak-perf1-ch-zk-3:2181:/preprod-id-yak-perf1</clusterID>
+            <tableName>preprod_compaction:table_1</tableName>
+            <startTime>16.5</startTime>
+            <endTime>17.00</endTime>
+            <profileID>testID</profileID>
+        </context>
+    </contexts>
+    <profiles>
+        <profile>
+            <profileID>testID</profileID>
+            <policies>
+                <policy>
+                    <name>com.flipkart.yak.policies.NaiveRegionSelectionPolicy</name>
+                    <configurations>
+                        <configuration>
+                            <name>compactor.policy.max.parallel.compaction.per.server</name>
+                            <value>2</value>
+                        </configuration>
+                    </configurations>
+                </policy>
+                <policy>
+                    <name>com.flipkart.yak.policies.TimestampAwareSelectionPolicy</name>
+                </policy>
+            </policies>
+            <aggregator>
+                <name>com.flipkart.yak.aggregator.ChainReportAggregator</name>
+                <configurations>
+                    <configuration>
+                        <name>aggregator.chain.policy.order</name>
+                        <value>com.flipkart.yak.policies.TimestampAwareSelectionPolicy,com.flipkart.yak.policies.NaiveRegionSelectionPolicy</value>
+                    </configuration>
+                </configurations>
+            </aggregator>
+        </profile>
+    </profiles>
+</configuration>
 ```

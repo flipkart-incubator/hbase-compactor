@@ -39,10 +39,9 @@ class XMLConfigLoderTest {
         assert config1.getCompactionContexts().size() == 1;
         assert config1.getCompactionContexts().iterator().next().getTableName().equals("preprod_compaction:table_1");
         assert compactionTriggerConfig.compactionContexts.size() == 1;
-        assert compactionProfileConfig.getID().equals("base");
-        assert compactionProfileConfig.getAggregator().getFirst().equals("com.flipkart.yak.aggregator.SimpleUnionAggregator");
-        assert compactionProfileConfig.getPolicies().size() == 1;
-        assert compactionProfileConfig.getPolicies().iterator().next().getFirst().equals("com.flipkart.yak.policies.NaiveRegionSelectionPolicy");
+        assert compactionProfileConfig.getID().equals("testID");
+        assert compactionProfileConfig.getAggregator().getFirst().equals("com.flipkart.yak.aggregator.ChainReportAggregator");
+        assert compactionProfileConfig.getPolicies().size() == 2;
     }
 
     @Test

@@ -7,6 +7,11 @@
     <groupId>com.flipkart.hbase</groupId>
     <artifactId>hbase-compactor</artifactId>
     <version>3.0.0</version>
+    <properties>
+        <hbase.client.version>2.1.7</hbase.client.version>
+        <hadoop.client.version>2.7.7</hadoop.client.version>
+        <log4j.version>2.7</log4j.version>
+    </properties>
 
     <distributionManagement>
          <repository>
@@ -27,7 +32,7 @@
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-client</artifactId>
-            <version>2.1.7</version>
+            <version>${hbase.client.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -42,17 +47,17 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
-            <version>2.7</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
-            <version>2.7</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
-            <version>2.7</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -77,6 +82,11 @@
             <artifactId>junit-jupiter-params</artifactId>
             <version>5.7.2</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+            <version>${hadoop.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
