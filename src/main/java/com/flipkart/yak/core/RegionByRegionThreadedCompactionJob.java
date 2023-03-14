@@ -37,7 +37,7 @@ public class RegionByRegionThreadedCompactionJob implements CompactionExecutable
         log.debug("received {} regions for compaction", report.size());
         for (Map.Entry<String, Pair<RegionInfo, RegionEligibilityStatus>> entry : report.entrySet()) {
             try {
-                log.debug("calling major compaction for {}", entry.getKey());
+                log.info("calling major compaction for {}", entry.getKey());
                 this.admin.majorCompactRegion(entry.getValue().getFirst().getEncodedNameAsBytes());
             } catch (IOException e) {
                 log.error("Could not trigger compaction for {}", entry.getKey());

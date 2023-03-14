@@ -1,5 +1,6 @@
 package com.flipkart.yak.core;
 
+import com.codahale.metrics.MetricRegistry;
 import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
@@ -20,6 +21,7 @@ public class ThreadedCompactionJob implements Submittable {
     CompactionManager compactionManager;
     CompactionExecutable compactionExecutable;
 
+
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
@@ -28,17 +30,22 @@ public class ThreadedCompactionJob implements Submittable {
        compactionExecutable = new RegionByRegionThreadedCompactionJob();
        compactionExecutable.initResources(compactionContext);
        compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable);
+
     }
 
     @Override
     public void run() {
         Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
         MDC.put("JOB", Thread.currentThread().getName());
+        MetricRegistry metricRegistry = new MetricRegistry();
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
             this.compactionManager.checkAndStart();
+            /*
+            Halt until next schedule
+             */
             long sleepFor = ScheduleUtils.getSleepTime(compactionSchedule);
-            log.debug("sleeping for {}", sleepFor);
+            log.info("sleeping for {}", sleepFor);
             try {
                 Thread.sleep(sleepFor);
             } catch (InterruptedException e) {

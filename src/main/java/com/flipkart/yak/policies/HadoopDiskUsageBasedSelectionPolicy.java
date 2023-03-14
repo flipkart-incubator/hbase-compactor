@@ -1,13 +1,20 @@
 package com.flipkart.yak.policies;
 
 import com.flipkart.yak.commons.ConnectionInventory;
+import com.flipkart.yak.commons.HBaseUtils;
+import com.flipkart.yak.commons.RegionEligibilityStatus;
+import com.flipkart.yak.commons.Report;
+import com.flipkart.yak.commons.hadoop.HDFSConnection;
 import com.flipkart.yak.commons.hadoop.HDFSDefaults;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
+import com.flipkart.yak.core.CompactionRuntimeException;
+import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.ServerName;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.RegionInfo;
@@ -18,22 +25,26 @@ import org.apache.hadoop.hdfs.protocol.ClientProtocol;
 import org.apache.hadoop.hdfs.protocol.DatanodeInfo;
 import org.apache.hadoop.hdfs.protocol.HdfsConstants;
 import org.apache.hadoop.hdfs.server.protocol.DatanodeStorageReport;
-import org.apache.hadoop.hdfs.tools.DFSAdmin;
 
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
-public class HadoopDiskUsageBasedSelectionPolicy extends BasePolicy {
+public class HadoopDiskUsageBasedSelectionPolicy implements RegionSelectionPolicy<HDFSConnection> {
 
     private static final String DISK_NAMENODE_KEY = "compactor.namenode.host";
     private static final int MAX_NUMBER_OF_NAMENODES = 2;
-    private static final List<String> nameNodes = new ArrayList<>(MAX_NUMBER_OF_NAMENODES);
     private static final String DFS_CLIENT_USE_HOST = "dfs.client.use.datanode.hostname";
+    private static double DISK_USAGE_THRESHOLD_PERCENT = 75.0;
+    private static final String KEY_DISK_USAGE_THRESHOLD_PERCENT = "compactor.max.diskusage.percentt";
 
+    /**
+     * Opened for testing and dev
+     * @param args
+     */
     public static void main(String[] args) {
         log.info(args[0]);
         System.setProperty("HADOOP_USER_NAME", "yak");
@@ -44,7 +55,8 @@ public class HadoopDiskUsageBasedSelectionPolicy extends BasePolicy {
         try {
             connection = ConnectionFactory.createConnection(getHbaseConfig(compactionContext));
             if (connection != null) {
-                hadoopDiskUsageBasedSelectionPolicy.initDFSClientFromConnection(connection);
+                ClientProtocol namenode = hadoopDiskUsageBasedSelectionPolicy.getNameNode(connection);
+                hadoopDiskUsageBasedSelectionPolicy.getDiskReport(namenode);
             }
         } catch (IOException e) {
             log.error(e.getMessage());
@@ -55,7 +67,7 @@ public class HadoopDiskUsageBasedSelectionPolicy extends BasePolicy {
     private static Configuration getHbaseConfig(CompactionContext context) {
         Configuration configuration = HBaseConfiguration.create();
         configuration.clear();
-        log.info("creating hbase config with {}", context.getClusterID());
+        log.debug("creating hbase config with {}", context.getClusterID());
         configuration.set("hbase.zookeeper.quorum", ConnectionInventory.getZookeeperQuorum(context.getClusterID()));
         configuration.set("zookeeper.znode.parent", ConnectionInventory.getParentFromID(context.getClusterID()));
         return configuration;
@@ -63,70 +75,152 @@ public class HadoopDiskUsageBasedSelectionPolicy extends BasePolicy {
 
     @Override
     public void setFromConfig(List<Pair<String, String>> configs) {
+        if(configs!= null) {
+            configs.forEach(pair -> {
+                if (pair.getFirst().equals(KEY_DISK_USAGE_THRESHOLD_PERCENT)) {
+                    DISK_USAGE_THRESHOLD_PERCENT = Double.parseDouble(pair.getSecond());
+                }
+            });
+        }
     }
 
-    public void initDFSClientFromConnection(Connection connection) throws IOException {
-        this.admin = connection.getAdmin();
-        Configuration configuration = new Configuration(false);
-        HDFSDefaults hdfsDefaults = new HDFSDefaults();
-        ServerName activeMaster = this.admin.getMaster();
-        Collection<ServerName> backupMastersMasters = this.admin.getBackupMasters();
+    public ClientProtocol getNameNode(Connection connection) throws IOException {
+        List<ServerName> masterServers =  this.getHBASEMasters(connection);
+        Configuration configuration = this.getCoreSiteConfig(masterServers);
+        Map<String, Map<String, InetSocketAddress>> nnRpcAddresses = DFSUtil.getHaNnRpcAddresses(configuration);
+        for(Map.Entry<String, Map<String, InetSocketAddress>> entry : nnRpcAddresses.entrySet()) {
+            for (Map.Entry<String, InetSocketAddress> inets : entry.getValue().entrySet()) {
+                try {
+                    DFSClient dfsClient = new DFSClient(inets.getValue(), configuration);
+                    log.debug("ID:{} Inet:{} ServiceName:{}", entry.getKey(), inets.getKey(), dfsClient.getCanonicalServiceName());
+                    this.testConnection(dfsClient.getNamenode());
+                    return dfsClient.getNamenode();
+                } catch (ConnectException e){
+                    log.error("could not connect: {} !! Trying next one..",e.getMessage());
+                }
+            }
+        }
+        return null;
+    }
+
+    private void testConnection(ClientProtocol clientProtocol) throws IOException {
+        clientProtocol.getStats();
+    }
+
+    private DatanodeStorageReport[] getDiskReport(ClientProtocol namenode) throws IOException {
+        DatanodeStorageReport[] datanodeStorageReports = namenode.getDatanodeStorageReport(HdfsConstants.DatanodeReportType.LIVE);
+        if(log.isDebugEnabled()) {
+            for (DatanodeStorageReport datanodeStorageReport : datanodeStorageReports) {
+                DatanodeInfo datanodeInfo = datanodeStorageReport.getDatanodeInfo();
+                log.debug("Host:{} Capacity:{} UsedPercent:{}", datanodeInfo.getHostName(), datanodeInfo.getCapacity(), datanodeInfo.getDfsUsedPercent());
+            }
+        }
+        return datanodeStorageReports;
+    }
+
+    private List<ServerName> getHBASEMasters(Connection connection)  throws IOException{
+        Admin admin = connection.getAdmin();
+        ServerName activeMaster = admin.getMaster();
+        Collection<ServerName> backupMastersMasters = admin.getBackupMasters();
         List<ServerName> allMasters = new ArrayList<>(backupMastersMasters);
         allMasters.add(activeMaster);
+        return allMasters;
+    }
+
+    private Configuration getCoreSiteConfig(List<ServerName> allMasters) {
+        Configuration configuration = new Configuration(false);
+        HDFSDefaults hdfsDefaults = new HDFSDefaults();
         hdfsDefaults.loadDefaults();
         hdfsDefaults.forEach(configuration::set);
-        allMasters.forEach(e->log.info("Master Found: {}",e.getServerName()));
+        if(log.isDebugEnabled()) {
+            allMasters.forEach(e -> log.debug("Master Found: {}", e.getServerName()));
+        }
         configuration.set(DFS_CLIENT_USE_HOST, "true");
         Iterator<ServerName> iterator = allMasters.iterator();
         if(allMasters.size() > 0 ){
             ServerName nn1 = iterator.next();
-            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_HTTP_NN_1,nn1.getHostname()+":50070");
-            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_1, nn1.getHostname()+":8020");
-            log.info("setting {} as {}", HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_1,nn1.getHostname()+":8020");
+            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_HTTP_NN_1,nn1.getHostname()+":" + HDFSDefaults.DEFAULT_NN_HTTP_PORT);
+            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_1, nn1.getHostname()+":"+ HDFSDefaults.DEFAULT_NN_RPC_PORT);
+            log.debug("setting {} as {}", HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_1,nn1.getHostname()+":"+ HDFSDefaults.DEFAULT_NN_RPC_PORT);
         }
-
         if(allMasters.size() > 1 ){
             ServerName nn2 = iterator.next();
-            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_HTTP_NN_2,nn2.getHostname()+":50070");
-            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_2, nn2.getHostname()+":8020");
-            log.info("setting {} as {}", HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_2,nn2.getHostname()+":8020");
+            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_HTTP_NN_2,nn2.getHostname()+":" + HDFSDefaults.DEFAULT_NN_HTTP_PORT);
+            configuration.set(HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_2, nn2.getHostname()+":"+ HDFSDefaults.DEFAULT_NN_RPC_PORT);
+            log.debug("setting {} as {}", HDFSDefaults.KEY_DFS_NAMENODE_RPC_NN_2,nn2.getHostname()+":"+ HDFSDefaults.DEFAULT_NN_RPC_PORT);
         }
-
-        String namenode = DFSUtil.getNamenodeNameServiceId(configuration);
-        String backupNamenode = DFSUtil.getBackupNameServiceId(configuration);
-        log.info("Namenode: {}", namenode);
-        log.info("Backup Namenode: {}", backupNamenode);
-        Map<String, Map<String, InetSocketAddress>> nnRpcAddresses = DFSUtil.getHaNnRpcAddresses(configuration);
-        for(Map.Entry<String, Map<String, InetSocketAddress>> entry : nnRpcAddresses.entrySet()) {
-            log.info("ID: {}", entry.getKey());
-
-                for (Map.Entry<String, InetSocketAddress> inets : entry.getValue().entrySet()) {
-                    log.info("Inet {}", inets.getKey());
-                    try {
-                        DFSClient dfsClient = new DFSClient(inets.getValue(), configuration);
-                        ClientProtocol namenodeProtocol = dfsClient.getNamenode();
-                        DatanodeStorageReport[] datanodeStorageReports = namenodeProtocol.getDatanodeStorageReport(HdfsConstants.DatanodeReportType.LIVE);
-                        for (DatanodeStorageReport datanodeStorageReport : datanodeStorageReports) {
-                            DatanodeInfo datanodeInfo = datanodeStorageReport.getDatanodeInfo();
-                            log.info("{} : {} : {}", datanodeInfo.getHostName(), datanodeInfo.getDfsUsed()/(1024L*1024L*1024L), datanodeInfo.getDfsUsedPercent());
-                        }
-                    } catch (ConnectException e){
-                        log.error("could not connect: {}",e.getMessage());
-                    }
-                }
-
-        }
-
-    }
-
-
-    private void release() {
-
+        return configuration;
     }
 
 
     @Override
-    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException {
-        return null;
+    public HDFSConnection init(CompactionContext compactionContext) {
+        Connection hbase = ConnectionInventory.getInstance().get(compactionContext.getClusterID());
+        ClientProtocol namenode = null;
+        try {
+            namenode = this.getNameNode(hbase);
+        } catch (IOException e) {
+            log.error("Could not create HDFS Connection: {}", e.getMessage());
+        }
+        return new HDFSConnection(hbase, namenode);
+    }
+
+    @Override
+    public Report getReport(CompactionContext context, HDFSConnection hdfsConnection) throws CompactionRuntimeException {
+        Report report = new Report(this.getClass().getName());
+        try {
+            Admin admin = hdfsConnection.getConnection().getAdmin();
+            //TODO: This data should be populated from FavouredNode mapping - not from RSGroup info
+            Map<String, Set<RegionInfo>> targetHostAndRegion = HBaseUtils.getHostToRegionMapping(context, admin);
+            if(log.isDebugEnabled()) {
+                targetHostAndRegion.forEach((K,V) -> log.debug("{}: {}", K, V.size()));
+            }
+            Connection connection = hdfsConnection.getConnection();
+            if (connection != null && !connection.isClosed()) {
+                ClientProtocol namenode = this.getNameNode(connection);
+                DatanodeStorageReport[] storageReport = this.getDiskReport(namenode);
+                log.debug("There are {} DataNodes whose DiskReport will be analysed", storageReport.length);
+                for(DatanodeStorageReport datanodeStorageReport: storageReport) {
+                    if (targetHostAndRegion.containsKey(datanodeStorageReport.getDatanodeInfo().getHostName())){
+                        if(datanodeStorageReport.getDatanodeInfo().getDfsUsedPercent() < DISK_USAGE_THRESHOLD_PERCENT) {
+                            log.debug("Including {} as Eligible , DiskUsage : {}",datanodeStorageReport.getDatanodeInfo().getHostName(), datanodeStorageReport.getDatanodeInfo().getDfsUsedPercent() );
+                            Set<RegionInfo> eligibleRegions = targetHostAndRegion.get(datanodeStorageReport.getDatanodeInfo().getHostName());
+                            eligibleRegions.forEach( eligibleRegion -> report.put(eligibleRegion.getEncodedName(),
+                                    new Pair<>(eligibleRegion, RegionEligibilityStatus.GREEN)));
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new CompactionRuntimeException(e);
+        }
+        log.info("{} regions present in final report prepared by {} without Filter", report.size(), report.getPreparedBy());
+        return report;
+    }
+
+    @Override
+    public Report getReport(CompactionContext context, HDFSConnection hdfsConnection, Report lastKnownReport) throws CompactionRuntimeException {
+        Report overAllReport = this.getReport(context, hdfsConnection);
+        Report finalreport = (Report)lastKnownReport.clone();
+        lastKnownReport.keySet().forEach( encodedRegion ->  {
+            if(!overAllReport.containsKey(encodedRegion)) {
+                finalreport.remove(encodedRegion);
+            }
+        });
+        log.info("{} regions present in final report prepared by {}", finalreport.size(), overAllReport.getPreparedBy());
+        return finalreport;
+    }
+
+
+    @Override
+    public void release(HDFSConnection hdfsConnection) {
+        if(hdfsConnection.getHdfsConnection() != null) {
+            try {
+                hdfsConnection.getConnection().close();
+            } catch (IOException e) {
+                log.error("Could not close HBASE connection to cluster: {}", e.getMessage());
+            }
+        }
+
     }
 }

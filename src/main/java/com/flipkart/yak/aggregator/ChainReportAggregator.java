@@ -4,12 +4,13 @@ import com.flipkart.yak.commons.ConnectionInventory;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.CompactionRuntimeException;
+import com.flipkart.yak.core.MonitorService;
 import com.flipkart.yak.interfaces.PolicyAggregator;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
+import com.flipkart.yak.core.PolicyRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.util.Pair;
-import org.apache.hbase.thirdparty.org.apache.commons.collections4.QueueUtils;
 
 import java.util.*;
 
@@ -39,29 +40,29 @@ public class ChainReportAggregator implements PolicyAggregator {
     }
 
     @Override
-    public Report applyAndCollect(Set<RegionSelectionPolicy> allPolicies, CompactionContext compactionContext) {
+    public Report applyAndCollect(Set<RegionSelectionPolicy> allPolicies, PolicyRunner runner, CompactionContext compactionContext) throws CompactionRuntimeException {
         Queue<Pair<String, Integer>> listOfPoliciesInOrder = new PriorityQueue<>(allPoliciesFromConfig);
-        Connection connection = ConnectionInventory.getInstance().get(compactionContext.getClusterID());
         Map<String, RegionSelectionPolicy> mapOfPolicyNames = new WeakHashMap<>();
         allPolicies.forEach(e-> mapOfPolicyNames.put(e.getClass().getName(),e));
         Report finalReport = new Report(this.getClass().getName());
-        Report tempReport = null;
+        Optional<Report> baseReport = Optional.empty();
         try {
             while (!listOfPoliciesInOrder.isEmpty()) {
                 String policyName = listOfPoliciesInOrder.poll().getFirst();
                 if (mapOfPolicyNames.containsKey(policyName)) {
-                    if (tempReport == null) {
-                        tempReport = mapOfPolicyNames.get(policyName).getReport(compactionContext, connection);
-                    } else {
-                        tempReport = mapOfPolicyNames.get(policyName).getReport(compactionContext, connection, tempReport);
+                    Report response = runner.runPolicy(mapOfPolicyNames.get(policyName), compactionContext, baseReport);
+                    if (response != null) {
+                        baseReport = Optional.of(response);
                     }
                 }
             }
         } catch (CompactionRuntimeException ce){
             log.error("could not get report from aggregation: {}", ce.getMessage());
+            throw ce;
         }
-        finalReport.putAll(tempReport);
+        finalReport.putAll(baseReport.get());
         log.info("total {} regions are being selected for major compaction in this run", finalReport.size());
+        MonitorService.reportValue(this.getClass(), compactionContext, "FinalNumRegion", finalReport.size());
         return finalReport;
     }
 

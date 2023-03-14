@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.hadoop.util.Time;
 
 import java.util.Set;
 
@@ -25,6 +26,7 @@ public class CompactionManager {
     private final CompactionContext compactionContext;
     private long DEFAULT_DELAY_BETWEEN_EACH_RUN = DateUtils.MILLIS_PER_MINUTE;
     private final CompactionExecutable compactionExecutable;
+    private final PolicyRunner policyRunner = new PolicyRunner();
 
     public CompactionManager(CompactionSchedule compactionSchedule, CompactionContext compactionContext, CompactionExecutable compactionExecutable) throws ConfigurationException {
         this.compactionSchedule = compactionSchedule;
@@ -39,16 +41,20 @@ public class CompactionManager {
         while (!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) {
             try {
                 Report report = this.aggregateReport();
-                this.compactionExecutable.doCompact(report);
-                log.debug("sleeping for {}", DEFAULT_DELAY_BETWEEN_EACH_RUN);
+//                this.compactionExecutable.doCompact(report);
+            } catch (CompactionRuntimeException e) {
+                log.error("exception while trying to trigger compaction :{} \n . will try again in {} millis", e.getMessage(), DEFAULT_DELAY_BETWEEN_EACH_RUN);
+            }
+            log.debug("sleeping for {} millis", DEFAULT_DELAY_BETWEEN_EACH_RUN);
+            try {
                 Thread.sleep(DEFAULT_DELAY_BETWEEN_EACH_RUN);
-            } catch (CompactionRuntimeException | InterruptedException e) {
-                log.error("exception while trying to trigger compaction :{} \n . will start again.", e.getMessage());
+            } catch (InterruptedException e) {
+                log.error("wait interrupted {}",e.getMessage());
             }
         }
     }
 
     private Report aggregateReport() throws CompactionRuntimeException {
-        return this.aggregator.applyAndCollect(this.getPolicies(), this.compactionContext);
+        return this.aggregator.applyAndCollect(this.getPolicies(), this.policyRunner, this.compactionContext);
     }
 }

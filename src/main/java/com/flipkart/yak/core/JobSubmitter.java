@@ -38,7 +38,9 @@ public class JobSubmitter {
     }
 
     public void start() {
+        MonitorService.start();
         this.preLoadConnections();
+
         for (CompactionContext compactionContext : this.compactionTriggerConfig.getCompactionContexts()) {
             ThreadedCompactionJob threadedCompactionJob = new ThreadedCompactionJob();
             try {
@@ -47,6 +49,7 @@ public class JobSubmitter {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
             compactors.add(this.executorService.submit(threadedCompactionJob));
+            log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableName());
         }
         this.executorService.shutdown();
     }

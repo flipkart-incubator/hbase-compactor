@@ -1,13 +1,12 @@
 package com.flipkart.yak.policies;
 
+import com.flipkart.yak.commons.HBaseUtils;
 import com.flipkart.yak.commons.RegionEligibilityStatus;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.CompactionRuntimeException;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.hbase.ServerName;
-import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.CompactionState;
 import org.apache.hadoop.hbase.client.Connection;
@@ -21,16 +20,13 @@ import java.util.stream.Collectors;
 
 
 @Slf4j
-public abstract class BasePolicy implements RegionSelectionPolicy {
-
-    protected Admin admin;
+public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connection> {
 
     @Override
     public Report getReport(CompactionContext context, Connection connection) throws CompactionRuntimeException {
         try {
-            admin = connection.getAdmin();
-            TableName tableName= TableName.valueOf(context.getTableName());
-            List<RegionInfo> allRegionInfoForThis = this.getAllRegions(tableName,admin);
+            Admin admin = connection.getAdmin();
+            List<RegionInfo> allRegionInfoForThis = HBaseUtils.getRegionsAll(context, admin);
             Report tempReport = new Report(this.getClass().getName());
             allRegionInfoForThis.forEach(a -> {
                 tempReport.put(a.getEncodedName(), new Pair<>(a, RegionEligibilityStatus.GREEN));
@@ -45,13 +41,13 @@ public abstract class BasePolicy implements RegionSelectionPolicy {
     @Override
     public Report getReport(CompactionContext context, Connection connection, Report report) throws CompactionRuntimeException {
         try {
-            admin = connection.getAdmin();
+            Admin admin = connection.getAdmin();
             List<RegionInfo> allRegions = report.values().stream().map(Pair::getFirst).collect(Collectors.toList());
             List<String> allEncodedRegionName = allRegions.stream().map(RegionInfo::getEncodedName).collect(Collectors.toList());
             Set<String> compactingRegions = this.getCompactingRegion(allEncodedRegionName, admin);
             Map<String, List<String>> regionFNMapping = new WeakHashMap<>();
-            this.refreshRegionToHostNameMapping(admin, allEncodedRegionName, regionFNMapping);
-            List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions);
+            HBaseUtils.refreshRegionToNodeMapping(admin, allEncodedRegionName, regionFNMapping);
+            List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions, connection);
             return this.prepareReport(report.entrySet().stream().map(e -> e.getValue().getFirst()).collect(Collectors.toList()), eligibleRegions);
         }catch (IOException e) {
             log.error("Exception while getting eligibility report {}", e.getMessage());
@@ -87,30 +83,9 @@ public abstract class BasePolicy implements RegionSelectionPolicy {
         return finalReport;
     }
 
-    private List<RegionInfo> getAllRegions(TableName tableName, Admin admin) throws IOException {
-        List<RegionInfo> allRegions = admin.getRegions(tableName);
-        log.debug("found {} regions for table {}", allRegions.size(), tableName);
-        return allRegions;
-    }
-
-    private void refreshRegionToHostNameMapping(Admin admin, List<String> allRegions,
-                                                Map<String, List<String>> regionFNHostnameMapping)
-            throws IOException {
-        for (ServerName sn : admin.getRegionServers()) {
-            List<RegionInfo> regions = admin.getRegions(sn);
-            regions.forEach(region -> {
-                if (allRegions.contains(region.getEncodedName())) {
-                    regionFNHostnameMapping.putIfAbsent(region.getEncodedName(), new ArrayList<>());
-                    regionFNHostnameMapping.get(region.getEncodedName()).add(sn.getHostname());
-                    log.debug("adding region {} for Favoured Node {}", region.getEncodedName(), sn.getHostname());
-                }
-            });
-        }
-        log.info("there are {} keys present in region-To-Favoured-Node mapping, " +
-                "ideally it should be total number of regions", regionFNHostnameMapping.size());
-    }
-
 
     abstract List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
-                                                     Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException;
+                                                     Set<String> compactingRegions,
+                                             List<RegionInfo> allRegions,
+                                             Connection connection) throws IOException;
 }

@@ -1,5 +1,7 @@
 package com.flipkart.yak.policies;
 
+import com.flipkart.yak.commons.ConnectionInventory;
+import com.flipkart.yak.config.CompactionContext;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.hbase.ServerName;
@@ -16,7 +18,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class NaiveRegionSelectionPolicy extends BasePolicy {
+public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
 
     private final static String HBASE_NS = "hbase";
     private final static String META_TABLE = "meta";
@@ -86,7 +88,8 @@ public class NaiveRegionSelectionPolicy extends BasePolicy {
     }
 
     List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
-                                            Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException {
+                                            Set<String> compactingRegions, List<RegionInfo> allRegions,
+                                    Connection connection) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();
         for (String encodedRegion : compactingRegions) {
@@ -127,4 +130,13 @@ public class NaiveRegionSelectionPolicy extends BasePolicy {
         return  encodedRegions;
     }
 
+    @Override
+    public Connection init(CompactionContext compactionContext) {
+        return ConnectionInventory.getInstance().get(compactionContext.getClusterID());
+    }
+
+    @Override
+    public void release(Connection connection) {
+
+    }
 }

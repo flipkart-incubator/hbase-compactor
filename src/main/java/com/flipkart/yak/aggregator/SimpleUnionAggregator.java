@@ -6,6 +6,7 @@ import com.flipkart.yak.commons.RegionEligibilityStatus;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.CompactionRuntimeException;
+import com.flipkart.yak.core.PolicyRunner;
 import com.flipkart.yak.interfaces.PolicyAggregator;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ public class SimpleUnionAggregator implements PolicyAggregator {
 
 
     @Override
-    public Report applyAndCollect(Set<RegionSelectionPolicy> allPolicies, CompactionContext compactionContext) throws CompactionRuntimeException {
+    public Report applyAndCollect(Set<RegionSelectionPolicy> allPolicies, PolicyRunner runner, CompactionContext compactionContext) throws CompactionRuntimeException {
         Connection connection = ConnectionInventory.getInstance().get(compactionContext.getClusterID());
         Report finalReport = new Report(this.getClass().getName());
         for (RegionSelectionPolicy regionSelectionPolicy : allPolicies) {

@@ -16,8 +16,8 @@ public class CompactionContext implements Validable {
     @NonNull final String clusterID;
     @NonNull final CompactionSchedule compactionSchedule;
     String tableName;
-    String nameSpace;
-    String rsGroup;
+    String nameSpace = "default";
+    String rsGroup = "default";
     @NonNull  final String compactionProfileID;
 
     @Override

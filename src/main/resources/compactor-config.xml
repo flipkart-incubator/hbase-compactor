@@ -1,10 +1,11 @@
 <configuration>
     <contexts>
         <context>
-            <clusterID>localhost:2181:/hbase</clusterID>
+            <clusterID>preprod-yak-testbed-ch2-zk-jn-1:2181,preprod-yak-testbed-ch2-zk-jn-2:2181,preprod-yak-testbed-ch2-zk-jn-3:2181:/hbase</clusterID>
             <tableName>table_1</tableName>
-            <startTime>21.00</startTime>
-            <endTime>22</endTime>
+            <nameSpace>preprod_compaction</nameSpace>
+            <startTime>12</startTime>
+            <endTime>16</endTime>
             <profileID>base</profileID>
         </context>
     </contexts>
@@ -19,10 +20,17 @@
                             <name>compactor.policy.max.parallel.compaction.per.server</name>
                             <value>2</value>
                         </configuration>
+                        <configuration>
+                            <name>compactor.policy.max.parallel.compaction.per.table</name>
+                            <value>8</value>
+                        </configuration>
                     </configurations>
                 </policy>
                 <policy>
                     <name>com.flipkart.yak.policies.TimestampAwareSelectionPolicy</name>
+                </policy>
+                <policy>
+                    <name>com.flipkart.yak.policies.HadoopDiskUsageBasedSelectionPolicy</name>
                 </policy>
             </policies>
             <aggregator>
@@ -30,7 +38,7 @@
                 <configurations>
                     <configuration>
                         <name>aggregator.chain.policy.order</name>
-                        <value>com.flipkart.yak.policies.TimestampAwareSelectionPolicy,com.flipkart.yak.policies.NaiveRegionSelectionPolicy</value>
+                        <value>com.flipkart.yak.policies.TimestampAwareSelectionPolicy,com.flipkart.yak.policies.NaiveRegionSelectionPolicy,com.flipkart.yak.policies.HadoopDiskUsageBasedSelectionPolicy</value>
                     </configuration>
                 </configurations>
             </aggregator>

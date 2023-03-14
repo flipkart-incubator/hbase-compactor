@@ -19,6 +19,8 @@ public class HDFSDefaults extends HashMap<String, String> {
     public static String KEY_DFS_NAMENODE_HTTP_NN_1="dfs.namenode.http-address.yak-store.nn1";
     public static String KEY_DFS_NAMENODE_HTTP_NN_2="dfs.namenode.http-address.yak-store.nn2";
     public static String KEY_FS_DEFAULT="fs.default.name";
+    public static String DEFAULT_NN_RPC_PORT = "8020";
+    public static String DEFAULT_NN_HTTP_PORT = "50070";
 
 
     public void loadDefaults() {

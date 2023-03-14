@@ -6,5 +6,5 @@ import org.apache.commons.configuration.ConfigurationException;
 
 
 public interface Submittable extends Runnable {
-    public void init(CompactionContext compactionContext) throws ConfigurationException;
+    void init(CompactionContext compactionContext) throws ConfigurationException;
 }

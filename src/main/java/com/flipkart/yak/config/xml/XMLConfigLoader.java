@@ -163,7 +163,8 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
             compactionContext.setRsGroup(configLoadedMap.get(XMLConfigTags.CONTEXT_RSGROUP));
         } else if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_NAMESPACE)) {
             compactionContext.setNameSpace(configLoadedMap.get(XMLConfigTags.CONTEXT_NAMESPACE));
-        } else if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_TABLE_NAME)) {
+        }
+        if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_TABLE_NAME)) {
             compactionContext.setTableName(configLoadedMap.get(XMLConfigTags.CONTEXT_TABLE_NAME));
         }
     }

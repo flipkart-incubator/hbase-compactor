@@ -1,8 +1,10 @@
 package com.flipkart.yak.policies;
 
+import com.flipkart.yak.config.CompactionContext;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.RegionInfo;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
@@ -13,17 +15,18 @@ import java.util.Map;
 import java.util.Set;
 
 @Slf4j
-public class TimestampAwareSelectionPolicy extends BasePolicy {
+public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 
     private static long DELAY_BETWEEN_TWO_COMPACTIONS = 86400000;
     private static String KEY_DELAY_BETWEEN_TWO_COMPACTIONS = "compactor.policy.compaction.delay";
 
     @Override
-    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions) throws IOException {
+    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions, Connection connection) throws IOException {
         List<String> regionsWhichCanBeCompacted = new ArrayList<>();
+        Admin admin = connection.getAdmin();
         long currentTimestamp = EnvironmentEdgeManager.currentTime();
         for(RegionInfo region: allRegions) {
-            long timestampMajorCompaction = this.admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
+            long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
             log.debug("Region {} last compacted at {}", region, timestampMajorCompaction);
             if ((currentTimestamp - timestampMajorCompaction > DELAY_BETWEEN_TWO_COMPACTIONS) && !compactingRegions.contains(region)) {
                 regionsWhichCanBeCompacted.add(region.getEncodedName());
