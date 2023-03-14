@@ -41,7 +41,7 @@ public class CompactionManager {
         while (!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) {
             try {
                 Report report = this.aggregateReport();
-//                this.compactionExecutable.doCompact(report);
+                this.compactionExecutable.doCompact(report);
             } catch (CompactionRuntimeException e) {
                 log.error("exception while trying to trigger compaction :{} \n . will try again in {} millis", e.getMessage(), DEFAULT_DELAY_BETWEEN_EACH_RUN);
             }

@@ -17,6 +17,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Simple implementation of {@link com.flipkart.yak.interfaces.RegionSelectionPolicy } that controls number of maximum
+ * compaction can be run on a Single RegionServer as well as on a Table. The number for max compaction per node defaults
+ * to 1 and can be controlled by config key "compactor.policy.max.parallel.compaction.per.server".
+ */
 @Slf4j
 public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
 
@@ -60,6 +65,7 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
         return Arrays.stream(servers).map(ServerName::getHostname).collect(Collectors.toList());
     }
 
+    //TODO: FavoredNode information can be taken into account while doing calculation for parallel job for a server
     private void refreshFavoredNodesMapping(Map<String, List<String>> regionFNHostnameMapping, Table metaTable, TableName tableName) throws IOException {
         Optional<PrefixFilter> filterOptional = Optional.of(new PrefixFilter(Bytes.toBytes(tableName + ",")));
         ResultScanner scanner = metaTable.getScanner(getScan(filterOptional));

@@ -17,7 +17,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-
+/**
+ * Container for compaction tasks. Each task is ran inside of a {@link ThreadedCompactionJob}
+ */
 @Slf4j
 public class JobSubmitter {
 
