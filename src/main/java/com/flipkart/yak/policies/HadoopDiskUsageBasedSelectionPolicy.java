@@ -30,8 +30,13 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.stream.Collectors;
 
+/**
+ * Uses {@link HDFSConnection} as resource which is essentially a collection of HADOOP and HBASE connection to derive
+ * Disk Usage of target nodes which are part of given {@link CompactionContext}. This makes an admin call to HBASE to
+ * derive all RegionServers falling under an RSGroup, creates a mapping of Host-To-Region and analyses disk usage of relevant
+ * Hosts only. Hence IO heavy and on every run processes the entire cluster data.
+ */
 @Slf4j
 public class HadoopDiskUsageBasedSelectionPolicy implements RegionSelectionPolicy<HDFSConnection> {
 

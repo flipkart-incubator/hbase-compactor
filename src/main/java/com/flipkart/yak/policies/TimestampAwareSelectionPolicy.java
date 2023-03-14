@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Simple implementation of {@link com.flipkart.yak.interfaces.RegionSelectionPolicy} that ignores a region as eligible
+ * candidate for compaction if compacted recently. Defaults to 1 day.
+ */
 @Slf4j
 public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 

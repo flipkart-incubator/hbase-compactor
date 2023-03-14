@@ -11,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.MDC;
 
-
+/**
+ * A compaction task responsible for executing compaction based on results returned by {@link com.flipkart.yak.interfaces.RegionSelectionPolicy}
+ */
 @Slf4j
 @Getter
 public class ThreadedCompactionJob implements Submittable {
@@ -37,7 +39,6 @@ public class ThreadedCompactionJob implements Submittable {
     public void run() {
         Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
         MDC.put("JOB", Thread.currentThread().getName());
-        MetricRegistry metricRegistry = new MetricRegistry();
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
             this.compactionManager.checkAndStart();

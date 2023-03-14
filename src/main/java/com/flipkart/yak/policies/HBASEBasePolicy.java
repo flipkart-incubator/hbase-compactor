@@ -18,7 +18,12 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
+/**
+ * Base implementation of {@link RegionSelectionPolicy} which uses {@link Connection} to get primitive information
+ * like list of Regions, state of compaction etc. Algorithms to select Regions which are solely dependent on HBASE cluster
+ * info must extend this class. Not useful for algorithms which does not need HBASE cluster info heavily e.g
+ * {@link HadoopDiskUsageBasedSelectionPolicy}
+ */
 @Slf4j
 public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connection> {
 
