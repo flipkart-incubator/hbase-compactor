@@ -1,0 +1,31 @@
+apiVersion: flow-v1
+kind: Pipeline
+spec:
+  pipeline_type: build
+  id: 20853
+  event_type: pull
+  trigger:
+    enable: true
+    source_branch: ""
+    commit_message: ""
+    pr_title: ""
+    modified_files: ""
+    pr_comment: ""
+    pr_label: ""
+  arguments:
+    parameters:
+    - name: jira
+      value: ""
+      type: parameter
+    - name: pr
+      value: ""
+      type: parameter
+    artifacts: []
+deployparams:
+  env_type: ""
+  env_name: ""
+  env_id: 0
+  cluster_context_id: 0
+  registry_id: 0
+  cluster_provider: ""
+  deploystrategy: null
