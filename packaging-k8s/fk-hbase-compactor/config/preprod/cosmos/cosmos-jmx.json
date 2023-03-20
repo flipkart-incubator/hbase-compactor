@@ -1,0 +1,15 @@
+{
+  "servers" : [
+    {
+      "port": "9311",
+      "host": "localhost",
+      "process": "hbase-compactor",
+      "queries": [
+        {
+          "obj": "java.lang:type=*,name=*",
+          "saperator": "."
+        }
+      ]
+    }
+  ]
+}
