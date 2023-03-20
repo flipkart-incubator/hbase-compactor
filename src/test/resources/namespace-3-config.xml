@@ -1,7 +1,7 @@
 <configuration>
     <contexts>
         <context>
-            <clusterID>preprod-id-yak-perf1-ch-zk-1:2181,preprod-id-yak-perf1-ch-zk-2:2181,preprod-id-yak-perf1-ch-zk-3:2181:/preprod-id-yak-perf1</clusterID>
+            <clusterID>preprod-id-hbase-zk-1:2181,preprod-id-hbase-zk-2:2181,preprod-id-hbase-zk-3:2181:/preprod-hbase</clusterID>
             <tableName>preprod_compaction:table_1</tableName>
             <startTime>16.5</startTime>
             <endTime>17.00</endTime>

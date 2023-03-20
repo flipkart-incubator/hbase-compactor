@@ -10,7 +10,7 @@ import org.apache.commons.configuration.ConfigurationException;
 public class HCompactor {
 
     public static void main(String[] args) {
-        System.setProperty("HADOOP_USER_NAME", "yak");
+        System.setProperty("HADOOP_USER_NAME", "LOCAL_USER_NAME");
         try {
             (new JobSubmitter(CompactionConfigManger.get())).start();
         } catch (ConfigurationException | CompactionRuntimeException e) {

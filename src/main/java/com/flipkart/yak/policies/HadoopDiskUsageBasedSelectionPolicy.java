@@ -45,29 +45,7 @@ public class HadoopDiskUsageBasedSelectionPolicy implements RegionSelectionPolic
     private static final String DFS_CLIENT_USE_HOST = "dfs.client.use.datanode.hostname";
     private static double DISK_USAGE_THRESHOLD_PERCENT = 75.0;
     private static final String KEY_DISK_USAGE_THRESHOLD_PERCENT = "compactor.max.diskusage.percentt";
-
-    /**
-     * Opened for testing and dev
-     * @param args
-     */
-    public static void main(String[] args) {
-        log.info(args[0]);
-        System.setProperty("HADOOP_USER_NAME", "yak");
-        HadoopDiskUsageBasedSelectionPolicy hadoopDiskUsageBasedSelectionPolicy = new HadoopDiskUsageBasedSelectionPolicy();
-        CompactionSchedule compactionSchedule = new CompactionSchedule(10,12);
-        CompactionContext compactionContext = new CompactionContext(args[0], compactionSchedule,"dummy");
-        Connection connection = null;
-        try {
-            connection = ConnectionFactory.createConnection(getHbaseConfig(compactionContext));
-            if (connection != null) {
-                ClientProtocol namenode = hadoopDiskUsageBasedSelectionPolicy.getNameNode(connection);
-                hadoopDiskUsageBasedSelectionPolicy.getDiskReport(namenode);
-            }
-        } catch (IOException e) {
-            log.error(e.getMessage());
-        }
-
-    }
+    
 
     private static Configuration getHbaseConfig(CompactionContext context) {
         Configuration configuration = HBaseConfiguration.create();

@@ -1,7 +1,7 @@
 <configuration>
     <contexts>
         <context>
-            <clusterID>preprod-yak-testbed-ch2-zk-jn-1:2181,preprod-yak-testbed-ch2-zk-jn-2:2181,preprod-yak-testbed-ch2-zk-jn-3:2181:/hbase</clusterID>
+            <clusterID>localhost:2181/hbase</clusterID>
             <tableName>table_1</tableName>
             <nameSpace>preprod_compaction</nameSpace>
             <startTime>12</startTime>
