@@ -10,7 +10,7 @@ spec:
     commit_message: ""
     pr_title: ""
     modified_files: ""
-    pr_comment: ""
+    pr_comment: build
     pr_label: ""
   arguments:
     parameters:
