@@ -1,0 +1,78 @@
+namespace: preprod-id-yak-ui
+fcp:
+  team: "yak"
+  appId: "preprod-id-yak-ui"
+  mail: "yak-dev"
+  service: "hbase-compactor"
+
+mtl:
+  cosmos:
+    statsd: disabled
+    tail: disabled
+    config: cosmos-config-worker
+  asterix: disabled
+  logsvc:
+    name: mtlconfig-worker
+    enabled: true
+    envName: preprod
+    sourceLoc: logfilter.conf
+
+pod:
+  replicaCount: 1
+
+hostpopulator:
+  state: disabled
+
+image:
+  scheduler-worker:
+    repository: indradhanush/scheduler-worker
+    volumes:
+      - app-config
+      - app-log
+      - preprod-config-service
+    livenessCheck:
+      initialDelay: 20
+      checkInterval: 15
+      method: tcp
+      port: 9311
+    ports:
+      - name: http
+        containerPort: 9311
+    maxCpuLimit: 1
+    maxCpuAsk: 1
+    maxMemoryLimit: 5Gi
+    maxMemoryAsk: 5Gi
+
+volumes:
+  - name: app-config
+    type: configMap
+    value: app-config-worker
+    mountPath: /etc/scheduler-worker/
+  - name: app-log
+    type: emptyDir
+    value: {}
+    mountPath: /var/log/flipkart/
+  - name: preprod-config-service
+    type: configMap
+    value: preprod-config-service
+    mountPath: /etc/default/
+    items:
+      - key: cfg-api
+        path: cfg-api
+      - key: fk-env
+        path: fk-service
+configMaps:
+  envName: preprod
+  configs:
+    - name: app-config-worker
+      source: dir
+      sourceLoc: app
+    - name: cosmos-config-worker
+      source: dir
+      sourceLoc: cosmos
+
+annotations:
+  sidecar.istio.io/inject: "false"
+
+newrelic:
+  state: disabled
