@@ -8,6 +8,10 @@
         {
           "obj": "java.lang:type=*,name=*",
           "saperator": "."
+        },
+        {
+          "obj": "metrics:name=*,type=*",
+          "saperator": "."
         }
       ]
     }
