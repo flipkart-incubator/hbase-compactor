@@ -53,11 +53,11 @@ public final class MonitorService {
     }
 
     public static void start() {
-        ConsoleReporter reporter = ConsoleReporter.forRegistry(metricRegistry)
+        JmxReporter reporter = JmxReporter.forRegistry(metricRegistry)
                 .convertRatesTo(TimeUnit.SECONDS)
                 .convertDurationsTo(TimeUnit.MILLISECONDS)
                 .build();
-        reporter.start(1, TimeUnit.SECONDS);
+        reporter.start();
 
     }
 }
