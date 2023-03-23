@@ -1,7 +1,7 @@
 namespace: preprod-id-yak-ui
 fcp:
   team: "yak"
-  appId: "preprod-id-yak-ui"
+  appId: "yak-core-preprod"
   mail: "yak-dev"
   service: "fk-hbase-compactor"
 

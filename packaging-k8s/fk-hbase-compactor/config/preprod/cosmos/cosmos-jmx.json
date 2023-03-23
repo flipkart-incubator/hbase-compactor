@@ -6,14 +6,29 @@
       "process": "hbase-compactor",
       "queries": [
         {
-          "obj": "java.lang:type=*,name=*",
-          "saperator": "."
-        },
-        {
-          "obj": "metrics:name=*,type=*",
-          "saperator": "."
+          "obj": "metrics:name=*",
+          "saperator": ".",
+          "typeNameModifiers": [
+            {
+              "typeNameMatcher": "metrics.com.flipkart.yak.policies.(.*)_(.*)_NumRegionInReport",
+              "typeNameGenerator": "metrics.com.flipkart.yak.policies.NumRegionInReport",
+              "tags": [
+                {"name": "policy", "valueGenerator": "${1}"},
+                {"name": "tenant", "valueGenerator": "${2}"}
+              ]
+            },
+            {
+              "typeNameMatcher": "metrics.com.flipkart.yak.aggregator.(.*)_(.*)_FinalNumRegion",
+              "typeNameGenerator": "metrics.com.flipkart.yak.aggregator.FinalNumRegion",
+              "tags": [
+                {"name": "policy", "valueGenerator": "${1}"},
+                {"name": "tenant", "valueGenerator": "${2}"}
+              ]
+            }
+          ]
         }
-      ]
+      ],
+      "numQueryThreads" : 2
     }
   ]
 }
