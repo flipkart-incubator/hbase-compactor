@@ -24,7 +24,8 @@ public class ConnectionInventoryTest {
                 Arguments.of("preprod-id-yak-perf1-ch-zk-1:2181:/hbase","preprod-id-yak-perf1-ch-zk-1:2181"),
                 Arguments.of("preprod-id-yak-perf1-ch-zk-1:2181","preprod-id-yak-perf1-ch-zk-1:2181"),
                 Arguments.of("localhost:2181","localhost:2181"),
-                Arguments.of("prod-id-yak-order-zk-1:2181","prod-id-yak-order-zk-1:2181")
+                Arguments.of("prod-id-yak-order-zk-1:2181","prod-id-yak-order-zk-1:2181"),
+                Arguments.of( "playground-core-ch-2-zk-0.playground-core-ch-2.yak-core-playground.svc.cluster.local:2181:/hbase", "playground-core-ch-2-zk-0.playground-core-ch-2.yak-core-playground.svc.cluster.local:2181")
         );
     }
 

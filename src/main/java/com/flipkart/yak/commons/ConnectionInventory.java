@@ -19,7 +19,7 @@ public class ConnectionInventory extends HashMap<String, Connection> {
     private static final String ZOOKEEPER_PARENT_SEPARATOR = "/";
     private static final String DEFAULT_PARENT = "hbase";
     private static final String ZOOKEEPER_PORT_SEPARATOR = ":";
-    private static final String HOSTNAME_LIST_REGEX = "([\\w\\d\\-]+:[\\d]{4},){1,5}";
+    private static final String HOSTNAME_LIST_REGEX = "([\\w\\d\\-.]+:[\\d]{4},){1,5}";
     private static final Pattern clusterIDRegexPattern = Pattern.compile(HOSTNAME_LIST_REGEX);
 
     private ConnectionInventory(){};
