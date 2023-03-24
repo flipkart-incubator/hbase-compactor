@@ -1,0 +1,53 @@
+namespace: yak-core-playground
+fcp:
+  team: "yak"
+  appId: "yak-core-playground"
+  mail: "yak-dev"
+  service: "fk-hbase-compactor"
+
+mtl:
+  cosmos:
+    statsd: disabled
+    tail: disabled
+    config: cosmos-compactor
+  asterix: disabled
+
+pod:
+  replicaCount: 1
+hostpopulator:
+  state: disabled
+
+image:
+  yak-compactor:
+    registry: jfrog.fkinternal.com
+    repository: yak-compactor/fk-hbase-compactor
+    volumes:
+      - app
+    livenessCheck:
+      initialDelay: 20
+      checkInterval: 15
+      method: tcp
+      port: 9311
+    ports:
+      - name: http
+        containerPort: 9311
+    maxCpuLimit: 1
+    maxCpuAsk: 1
+    maxMemoryLimit: 5Gi
+    maxMemoryAsk: 5Gi
+
+volumes:
+  - name: app
+    type: configMap
+    value: app
+    mountPath: /etc/hbase-compactor/
+
+configMaps:
+  envName: playground
+  configs:
+    - name: app
+      source: dir
+      sourceLoc: compactor
+    - name: cosmos-compactor
+      source: dir
+      sourceLoc: cosmos
