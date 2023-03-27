@@ -21,12 +21,14 @@ public class RegionByRegionThreadedCompactionJob implements CompactionExecutable
 
     private Connection connection;
     private Admin admin;
+    private CompactionContext compactionContext;
 
     @Override
     public void initResources(CompactionContext context) throws ConfigurationException {
         try {
             this.connection = ConnectionInventory.getInstance().get(context.getClusterID());
             this.admin = this.connection.getAdmin();
+            this.compactionContext = context;
         } catch (IOException e) {
             throw new ConfigurationException(e.getMessage());
         }
@@ -39,8 +41,10 @@ public class RegionByRegionThreadedCompactionJob implements CompactionExecutable
             try {
                 log.info("calling major compaction for {}", entry.getKey());
                 this.admin.majorCompactRegion(entry.getValue().getFirst().getEncodedNameAsBytes());
+                MonitorService.reportValue(this.getClass(), this.compactionContext, "success",1);
             } catch (IOException e) {
                 log.error("Could not trigger compaction for {}", entry.getKey());
+                MonitorService.reportValue(this.getClass(), this.compactionContext, "failure",1);
                 throw new CompactionRuntimeException(e);
             }
         }
