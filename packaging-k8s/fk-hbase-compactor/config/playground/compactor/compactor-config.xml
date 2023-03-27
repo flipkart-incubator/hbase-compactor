@@ -4,8 +4,8 @@
             <clusterID>playground-yak-core-ch-2-zk-0.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181,playground-yak-core-ch-2-zk-1.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181,playground-yak-core-ch-2-zk-2.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181:/hbase</clusterID>
             <tableName>test</tableName>
             <nameSpace>yaktest</nameSpace>
-            <startTime>12</startTime>
-            <endTime>16</endTime>
+            <startTime>11</startTime>
+            <endTime>13</endTime>
             <profileID>base</profileID>
         </context>
     </contexts>
@@ -31,6 +31,12 @@
                 </policy>
                 <policy>
                     <name>com.flipkart.yak.policies.HadoopDiskUsageBasedSelectionPolicy</name>
+                    <configurations>
+                        <configuration>
+                            <name>compactor.namenode.hosts</name>
+                            <value>playground-yak-core-ch-2-nn-0.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local,playground-yak-core-ch-2-nn-1.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local</value>
+                        </configuration>
+                    </configurations>
                 </policy>
             </policies>
             <aggregator>
