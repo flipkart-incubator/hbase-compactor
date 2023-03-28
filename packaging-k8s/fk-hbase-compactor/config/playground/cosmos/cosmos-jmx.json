@@ -24,6 +24,14 @@
                 {"name": "policy", "valueGenerator": "${1}"},
                 {"name": "tenant", "valueGenerator": "${2}"}
               ]
+            },
+            {
+              "typeNameMatcher": "metrics.com.flipkart.yak.core.RegionByRegionThreadedCompactionJob_(.*)_(.*)",
+              "typeNameGenerator": "metrics.com.flipkart.yak.core.RegionByRegionThreadedCompactionJob",
+              "tags": [
+                {"name": "tenant", "valueGenerator": "${1}"},
+                {"name": "policy", "valueGenerator": "${2}"}
+              ]
             }
           ]
         }

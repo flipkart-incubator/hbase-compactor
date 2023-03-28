@@ -8,6 +8,14 @@
             <endTime>13</endTime>
             <profileID>base</profileID>
         </context>
+        <context>
+            <clusterID>playground-yak-core-ch-2-zk-0.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181,playground-yak-core-ch-2-zk-1.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181,playground-yak-core-ch-2-zk-2.playground-yak-core-ch-2.yak-core-playground.svc.cluster.local:2181:/hbase</clusterID>
+            <tableName>benchmark</tableName>
+            <nameSpace>yak</nameSpace>
+            <startTime>12</startTime>
+            <endTime>13</endTime>
+            <profileID>base</profileID>
+        </context>
     </contexts>
     <profiles>
         <profile>
