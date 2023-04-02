@@ -1,0 +1,53 @@
+zookeeperHost : "localhost:2181"
+
+logging:
+  level: INFO
+  appenders:
+    - type: file
+      currentLogFilename: compactor.log
+      threshold: INFO
+      archive: true
+      archivedLogFilenamePattern: compactor-%i.log
+      archivedFileCount: 1
+      maxFileSize: 800MB
+      timeZone: IST
+      queueSize: 1024
+      discardingThreshold: 20
+      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
+      neverBlock: true
+    - type: file
+      currentLogFilename: error.log
+      threshold: ERROR
+      archive: true
+      archivedLogFilenamePattern: error-%i.log
+      archivedFileCount: 1
+      maxFileSize: 200MB
+      timeZone: IST
+      queueSize: 1024
+      discardingThreshold: 20
+      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
+      neverBlock: true
+    - type: console
+      threshold: ${logger.console.level}
+      timeZone: IST
+      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
+
+server:
+  rootPath: /api
+  applicationConnectors:
+    - type: http
+      port: 8082
+  adminConnectors:
+    - type: http
+      port: 8083
+  requestLog:
+    appenders:
+      - type: file
+        currentLogFilename: access.log
+        archivedLogFilenamePattern: access-%i.log
+        logFormat: '%h [%date{dd MMM yyyy;HH:mm:ss.SSS}] - "%r" %s %b %D'
+        archive: true
+        archivedFileCount: 1
+        timeZone: IST
+        maxFileSize: 200MB
+        neverBlock: true

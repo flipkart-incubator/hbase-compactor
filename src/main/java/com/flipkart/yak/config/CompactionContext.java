@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
 import lombok.Getter;
 import lombok.NonNull;
@@ -13,11 +14,17 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CompactionContext implements Validable {
 
+
     @NonNull final String clusterID;
+
     @NonNull final CompactionSchedule compactionSchedule;
+
     String tableName;
+
     String nameSpace = "default";
+
     String rsGroup = "default";
+
     @NonNull  final String compactionProfileID;
 
     @Override

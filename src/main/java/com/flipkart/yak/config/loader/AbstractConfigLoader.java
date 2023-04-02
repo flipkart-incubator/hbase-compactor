@@ -15,10 +15,10 @@ public abstract class AbstractConfigLoader <Resource> {
     List<String> resourceNames = new ArrayList<>();
 
 
-    abstract Resource preCheckAndLoad(String resourceName) throws ConfigurationException;
+    protected abstract Resource preCheckAndLoad(String resourceName) throws ConfigurationException;
     public abstract List<CompactionProfileConfig> getProfiles(Resource resource) throws ConfigurationException;
     public abstract List<CompactionContext> getCompactionContexts(Resource resource) throws ConfigurationException;
-    abstract void close(Resource resourceType);
+    protected abstract void close(Resource resourceType);
 
     /**
      * initializes the config, ignores if issue in loading config
