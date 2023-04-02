@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
@@ -10,8 +11,10 @@ import java.util.Objects;
 @Getter @Setter
 @AllArgsConstructor
 public class CompactionSchedule {
+    @JsonProperty
     @NonNull
     private final float startHourOfTheDay;
+    @JsonProperty
     @NonNull
     private final float endHourOfTheDay;
 

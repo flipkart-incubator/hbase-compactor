@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
 import com.google.common.collect.Sets;
 import lombok.AllArgsConstructor;
@@ -14,8 +15,13 @@ import java.util.Set;
 @Getter @Setter
 @AllArgsConstructor
 public class CompactionProfileConfig implements Validable {
+
     @NonNull final String ID;
+
+
     Set<SerializedConfigurable> policies;
+
+
     @NonNull final SerializedConfigurable aggregator;
 
 
