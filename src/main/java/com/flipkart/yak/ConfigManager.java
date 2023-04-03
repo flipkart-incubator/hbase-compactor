@@ -25,7 +25,7 @@ public class ConfigManager extends Application<AppConfig> {
     @Override
     public void run(AppConfig appConfig, Environment environment) throws Exception {
         StoreFactory storeFactory = StoreFactory.getInstance();
-        ConfigController configController = new ConfigController(storeFactory);
+        ConfigController configController = new ConfigController(storeFactory, appConfig.getZookeeperHost());
         environment.jersey().register(configController);
         environment.healthChecks().register("default", new DefaultHealthCheck());
     }

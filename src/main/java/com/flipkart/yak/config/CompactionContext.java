@@ -2,16 +2,18 @@ package com.flipkart.yak.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 import org.apache.commons.configuration.ConfigurationException;
 
 import java.util.Objects;
 
-@Getter @Setter
+
+@Data
+@SuperBuilder
 @RequiredArgsConstructor
+@Jacksonized
 public class CompactionContext implements Validable {
 
 
