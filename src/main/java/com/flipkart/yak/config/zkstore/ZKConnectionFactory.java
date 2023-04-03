@@ -2,9 +2,7 @@ package com.flipkart.yak.config.zkstore;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.*;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
@@ -44,5 +42,33 @@ public class ZKConnectionFactory {
             throw new ConfigurationException(e);
         }
         return zooKeeper;
+    }
+
+    public static boolean createBasePaths() {
+        log.info("creating base path");
+        if( zooKeeper != null) {
+            try {
+                if(zooKeeper.exists(ZKDataUtil.BASE_PATH, null) == null) {
+                    log.info("{} Does not exists, creating.", ZKDataUtil.BASE_PATH);
+                    zooKeeper.create(ZKDataUtil.BASE_PATH, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                }
+                if(zooKeeper.exists(ZKDataUtil.BASE_PATH+ZKDataUtil.CONTEXT_PATH, null) == null) {
+                    log.info("{} Does not exists, creating.", ZKDataUtil.BASE_PATH+ZKDataUtil.CONTEXT_PATH);
+                    zooKeeper.create(ZKDataUtil.BASE_PATH+ZKDataUtil.CONTEXT_PATH, null, ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.PERSISTENT);
+                }
+                if(zooKeeper.exists(ZKDataUtil.BASE_PATH+ZKDataUtil.PROFILE_PATH, null) == null) {
+                    log.info("{} Does not exists, creating.", ZKDataUtil.BASE_PATH+ZKDataUtil.PROFILE_PATH);
+                    zooKeeper.create(ZKDataUtil.BASE_PATH+ZKDataUtil.PROFILE_PATH, null, ZooDefs.Ids.OPEN_ACL_UNSAFE,
+                            CreateMode.PERSISTENT);
+                }
+
+            } catch (KeeperException | InterruptedException e) {
+                log.error("Could not create path: {}", e.getMessage());
+                return false;
+            }
+            return true;
+        }
+        return  false;
     }
 }
