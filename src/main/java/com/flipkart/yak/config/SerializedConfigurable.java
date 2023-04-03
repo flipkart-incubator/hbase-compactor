@@ -1,14 +1,19 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.extern.jackson.Jacksonized;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 public class SerializedConfigurable extends Pair<String , List<Pair<String, String>>> {
 
-    public SerializedConfigurable(String a, List<Pair<String, String>> b) {
+    @JsonCreator
+    public SerializedConfigurable(@JsonProperty("first") String a, @JsonProperty("second")List<Pair<String, String>> b) {
         super(a, b);
     }
 
