@@ -30,4 +30,6 @@ public class CompactionSchedule {
     public int hashCode() {
         return Objects.hash(getStartHourOfTheDay(), getEndHourOfTheDay());
     }
+
+
 }

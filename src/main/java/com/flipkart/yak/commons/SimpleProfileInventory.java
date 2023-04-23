@@ -13,11 +13,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class SimpleProfileInventory implements ProfileInventory  {
 
-    final Map<String, CompactionProfile> profileInventory = new HashMap<>();
+    /**
+     * Multiple threads, primarily form Listener interface can access this and update concurrently. Hence, it is mandatory
+     * to be {@link ConcurrentHashMap}.
+     */
+    final Map<String, CompactionProfile> profileInventory = new ConcurrentHashMap<>();
 
     @Override
     public CompactionProfile loadProfileFromName(CompactionProfileConfig compactionProfileConfig) throws ClassNotFoundException {
@@ -43,6 +48,11 @@ public class SimpleProfileInventory implements ProfileInventory  {
     @Override
     public void handleExceptionWithoutThrowing(ClassNotFoundException e) {
         log.error("Class Not Found: {}", e.getMessage());
+    }
+
+    @Override
+    public void reset() {
+        profileInventory.clear();
     }
 
 

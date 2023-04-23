@@ -11,11 +11,11 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root level="DEBUG">
+        <Root level="INFO">
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="org.apache.zookeeper" level="ERROR"/>
-        <Logger name="org.apache.hbase.thirdparty" level="INFO"/>
+        <Logger name="org.apache.hbase.thirdparty" level="ERROR"/>
         <Logger name="org.apache.hadoop" level="OFF"/>
     </Loggers>
 </Configuration>

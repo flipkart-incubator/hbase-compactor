@@ -10,9 +10,11 @@ public interface ProfileInventory {
     CompactionProfile loadProfileFromName(CompactionProfileConfig compactionProfileConfig) throws ClassNotFoundException;
     void add(CompactionProfile compactionProfile);
     void handleExceptionWithoutThrowing(ClassNotFoundException e);
+    void reset();
     CompactionProfile get(String key);
 
     default void reload(CompactionTriggerConfig compactionTriggerConfig) {
+        this.reset();
         for(CompactionProfileConfig compactionProfileConfig : compactionTriggerConfig.getCompactionProfileConfigs()) {
             try {
                 this.add(this.loadProfileFromName(compactionProfileConfig));

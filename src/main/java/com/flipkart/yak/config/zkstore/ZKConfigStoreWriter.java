@@ -5,20 +5,18 @@ import com.flipkart.yak.config.CompactionProfileConfig;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 
 @Slf4j
-public class ZKConfigStoreWriter extends AbstractConfigWriter<ZooKeeper> {
+public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> {
 
     @Override
-    public ZooKeeper init(String resourceName) throws ConfigurationException {
+    public CuratorFramework init(String resourceName) throws ConfigurationException {
         try {
-            ZooKeeper zooKeeper = ZKConnectionFactory.createZKConnector(resourceName, false);
+            CuratorFramework zooKeeper = ZKConnectionFactory.createZKConnector(resourceName, false);
             boolean initSuccess = ZKConnectionFactory.createBasePaths();
             if (!initSuccess) {
                 log.error("could not create path for initialisation");
@@ -32,28 +30,27 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<ZooKeeper> {
     }
 
     @Override
-    public boolean storeProfile(ZooKeeper zooKeeper, CompactionProfileConfig compactionProfileConfig) {
+    public boolean storeProfile(CuratorFramework zooKeeper, CompactionProfileConfig compactionProfileConfig) {
         byte[] data = ZKDataUtil.getSerializedProfile(compactionProfileConfig);
         log.debug("writing to zk {}", data);
         try {
             String profilePath = ZKDataUtil.getProfilePath(compactionProfileConfig.getID());
-            Stat checkIfExists = zooKeeper.exists(profilePath, null);
+            Stat checkIfExists = zooKeeper.checkExists().forPath(profilePath);
             if(checkIfExists == null) {
                 log.info("{} : Profile does not exists", ZKDataUtil.getProfilePath(compactionProfileConfig.getID()));
-                zooKeeper.create(profilePath, data, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zooKeeper.create().withMode(CreateMode.PERSISTENT).forPath(profilePath, null);
             }
-            int version = checkIfExists == null? 0: checkIfExists.getVersion();
-            log.info("{} version {}", profilePath, version);
-            zooKeeper.setData(profilePath, data, version);
+            int version = zooKeeper.setData().forPath(profilePath, data).getVersion();
+            log.info("Written {} version for path {} with data {}", version, profilePath, data);
             return true;
-        } catch (KeeperException | InterruptedException e) {
+        } catch (Exception e) {
             log.error("Could not write to store: {}", e.getMessage());
         }
         return false;
     }
 
     @Override
-    public boolean storeContext(ZooKeeper zooKeeper, CompactionContext compactionContext) {
+    public boolean storeContext(CuratorFramework zooKeeper, CompactionContext compactionContext) {
         byte[] data = ZKDataUtil.getSerializedContext(compactionContext);
         if(data == null) {
             return false;
@@ -61,16 +58,15 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<ZooKeeper> {
         log.debug("writing to zk {}", data);
         try {
             String contextPath = ZKDataUtil.getContextPath(compactionContext);
-            Stat checkIfExists = zooKeeper.exists(contextPath, null);
+            Stat checkIfExists = zooKeeper.checkExists().forPath(contextPath);
             if( checkIfExists == null) {
                 log.info("{} : Profile does not exists", contextPath);
-                zooKeeper.create(contextPath, data, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+                zooKeeper.create().withMode(CreateMode.PERSISTENT).forPath(contextPath, null);
             }
-            int version = checkIfExists == null? 0: checkIfExists.getVersion();
-            log.info("{} version {}", contextPath, version);
-            zooKeeper.setData(contextPath, data, version);
+            int version = zooKeeper.setData().forPath(contextPath, data).getVersion();
+            log.info("Written {} version for path {} with data {}", version, contextPath, data);
             return true;
-        } catch (KeeperException | InterruptedException e) {
+        } catch (Exception e) {
             log.error("Could not write to store: {}", e.getMessage());
         }
         return false;

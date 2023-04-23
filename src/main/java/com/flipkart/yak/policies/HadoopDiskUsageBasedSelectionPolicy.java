@@ -45,7 +45,7 @@ public class HadoopDiskUsageBasedSelectionPolicy implements RegionSelectionPolic
     private static final String DISK_NAMENODE_KEY = "compactor.namenode.hosts";
     private final List<String> LIST_OF_NN = new ArrayList<>(3);
     private static final String DFS_CLIENT_USE_HOST = "dfs.client.use.datanode.hostname";
-    private static double DISK_USAGE_THRESHOLD_PERCENT = 75.0;
+    private double DISK_USAGE_THRESHOLD_PERCENT = 75.0;
     private static final String KEY_DISK_USAGE_THRESHOLD_PERCENT = "compactor.max.diskusage.percentt";
 
     /**
