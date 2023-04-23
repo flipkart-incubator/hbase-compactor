@@ -5,7 +5,6 @@ import com.flipkart.yak.config.CompactionProfileConfig;
 import com.flipkart.yak.config.CompactionTriggerConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hbase.thirdparty.com.google.common.collect.Sets;
 
 import java.util.*;
 
@@ -26,6 +25,7 @@ public abstract class AbstractConfigLoader <Resource> {
     private void init() {
         if (config == null) {
             List<CompactionTriggerConfig> compactionTriggerConfigs = new ArrayList<>();
+            log.info("Number of resources: {}", this.resourceNames.size());
             this.resourceNames.forEach(resource -> {
                 Resource r = null;
                 try {
@@ -36,11 +36,7 @@ public abstract class AbstractConfigLoader <Resource> {
                 } catch (ConfigurationException e) {
                     log.warn("Found issue with {} while loading.. ignoring this resource: {}", resource, e.getMessage());
                 }
-                finally {
-                    if (r != null) {
-                        this.close(r);
-                    }
-                }
+
             });
             this.config = this.mergeConfig(compactionTriggerConfigs);
         }
@@ -54,6 +50,12 @@ public abstract class AbstractConfigLoader <Resource> {
     }
 
 
+    /**
+     * Create sinle {@link CompactionTriggerConfig} from multiple Config. This is useful when multiple tenant wants to
+     * keep separate CompactionTriggerConfig, this utility combines all of them into one.
+     * @param compactionTriggerConfigs List of CompactionTriggerConfig collected from all resources.
+     * @return Combined CompactionTriggerConfig
+     */
     private CompactionTriggerConfig mergeConfig(List<CompactionTriggerConfig> compactionTriggerConfigs) {
         CompactionTriggerConfig.Builder builder = new CompactionTriggerConfig.Builder();
         Set<CompactionProfileConfig> allProfiles = new HashSet<>();
@@ -66,7 +68,7 @@ public abstract class AbstractConfigLoader <Resource> {
     }
 
     /**
-     * Saves config resource file in memory
+     * Saves config resource file in memory, this method needs to be called to add Store config
      * @param resourceName
      */
     public void addResource(String resourceName) {
@@ -103,5 +105,15 @@ public abstract class AbstractConfigLoader <Resource> {
             throw new ConfigurationException("Compaction Trigger Config not initialized!! Check if config file passed correctly");
         }
         return config;
+    }
+
+    /**
+     * Clears in-memory config and loads the new one. Should be called before every restart.
+     * @return Newly loaded {@link CompactionTriggerConfig}
+     * @throws ConfigurationException
+     */
+    public CompactionTriggerConfig clearGetConfig() throws ConfigurationException {
+        config = null;
+        return  getConfig();
     }
 }

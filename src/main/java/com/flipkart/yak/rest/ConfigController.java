@@ -3,16 +3,18 @@ package com.flipkart.yak.rest;
 import com.flipkart.yak.config.*;
 import com.flipkart.yak.config.loader.AbstractConfigLoader;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
+import com.flipkart.yak.interfaces.Factory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hadoop.hbase.util.Pair;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
+/**
+ * Controller class for all REST APIs.
+ * Takes in {@link Factory} as parameter, and uses to obtain DAOs to store/retrieve data in/from Store.
+ */
 @Slf4j
 @Path("/manage")
 public class ConfigController {
@@ -20,7 +22,7 @@ public class ConfigController {
     private final AbstractConfigLoader abstractConfigLoader;
     private final Object storeResource;
 
-    public ConfigController(StoreFactory storeFactory, String storeResourceProperty) throws ConfigurationException {
+    public ConfigController(Factory storeFactory, String storeResourceProperty) throws ConfigurationException {
          abstractConfigWriter = storeFactory.getWriter();
          abstractConfigLoader = storeFactory.getLoader();
          storeResource = abstractConfigWriter.init(storeResourceProperty);

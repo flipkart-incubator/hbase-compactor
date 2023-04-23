@@ -32,8 +32,8 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
 
     public static String KEY_MAX_PARALLEL_COMPACTION = "compactor.policy.max.parallel.compaction.per.server";
     public static String KEY_MAX_PARALLEL_COMPACTION_FOR_TABLE = "compactor.policy.max.parallel.compaction.per.table";
-    private static int MAX_PARALLEL_COMPACTION_PER_SERVER = 1;
-    private static int MAX_PARALLEL_COMPACTION_PER_TARGET = 5;
+    private int MAX_PARALLEL_COMPACTION_PER_SERVER = 1;
+    private int MAX_PARALLEL_COMPACTION_PER_TARGET = 5;
 
     @Override
     public void setFromConfig(List<Pair<String, String>> configs) {
@@ -52,6 +52,7 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
             log.warn("config passed to this policy is null, please check config file");
         }
         log.info("Max Parallel Compaction for a server allowed {}", MAX_PARALLEL_COMPACTION_PER_SERVER);
+        log.info("Max Parallel Compaction for a target allowed {}", MAX_PARALLEL_COMPACTION_PER_TARGET);
     }
 
     private List<String> getFavoredNodesList(byte[] favoredNodes) throws IOException {

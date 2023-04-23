@@ -1,7 +1,7 @@
 <configuration>
     <contexts>
         <context>
-            <clusterID>localhost:2181/hbase</clusterID>
+            <clusterID>localhost:2181:/hbase</clusterID>
             <tableName>table_1</tableName>
             <nameSpace>preprod_compaction</nameSpace>
             <startTime>12</startTime>

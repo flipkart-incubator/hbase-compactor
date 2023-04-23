@@ -1,4 +1,7 @@
-zookeeperHost : "localhost:2181"
+zkConfig :
+  connectionString: "localhost:2181"
+  readOnly:  "true"
+hadoopUserName: "yak"
 
 logging:
   level: INFO
