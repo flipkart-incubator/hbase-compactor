@@ -8,6 +8,7 @@ import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
 import com.flipkart.yak.interfaces.CompactionExecutable;
 import com.flipkart.yak.interfaces.PolicyAggregator;
+import com.flipkart.yak.interfaces.ProfileInventory;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,10 +29,10 @@ public class CompactionManager {
     private final CompactionExecutable compactionExecutable;
     private final PolicyRunner policyRunner = new PolicyRunner();
 
-    public CompactionManager(CompactionSchedule compactionSchedule, CompactionContext compactionContext, CompactionExecutable compactionExecutable) throws ConfigurationException {
+    public CompactionManager(CompactionSchedule compactionSchedule, CompactionContext compactionContext, CompactionExecutable compactionExecutable, ProfileInventory profileInventory) throws ConfigurationException {
         this.compactionSchedule = compactionSchedule;
         this.compactionContext = compactionContext;
-        CompactionProfile profileForThis = ProfileInventoryFactory.getProfileInventory().get(compactionContext.getCompactionProfileID());
+        CompactionProfile profileForThis = profileInventory.get(compactionContext.getCompactionProfileID());
         aggregator = profileForThis.getAggregator();
         policies = profileForThis.getPolicies();
         this.compactionExecutable = compactionExecutable;

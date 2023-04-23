@@ -11,6 +11,7 @@
         <hbase.client.version>2.1.7</hbase.client.version>
         <hadoop.client.version>2.7.7</hadoop.client.version>
         <zookeeper.version>3.4.11</zookeeper.version>
+        <curator.version>2.7.1</curator.version>
         <mockito.version>3.3.3</mockito.version>
         <jackson.version>2.13.5</jackson.version>
         <dropwizard.version>1.3.16</dropwizard.version>
@@ -77,8 +78,8 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-client</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -97,23 +98,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>23.0</version>
+            <version>18.0</version>
         </dependency>
-
         <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>${curator.version}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -143,6 +133,11 @@
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
             <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.17</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -183,6 +178,10 @@
             <artifactId>hadoop-client</artifactId>
             <version>${hadoop.client.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.mortbay.jetty</groupId>
+                    <artifactId>jetty-util</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-simple</artifactId>
@@ -236,7 +235,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${project.build.directory}/lib</outputDirectory>
-                            <excludeArtifactIds>slf4j-log4j12,log4j-slf4j-impl</excludeArtifactIds>
+                            <excludeArtifactIds>slf4j-log4j12,log4j-slf4j-impl,org.eclipse.jetty:jetty-util:6.1.26</excludeArtifactIds>
                         </configuration>
                     </execution>
                 </executions>

@@ -21,7 +21,7 @@ import java.util.Set;
 @Slf4j
 public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 
-    private static long DELAY_BETWEEN_TWO_COMPACTIONS = 86400000;
+    private long DELAY_BETWEEN_TWO_COMPACTIONS = 86400000;
     private static String KEY_DELAY_BETWEEN_TWO_COMPACTIONS = "compactor.policy.compaction.delay";
 
     @Override

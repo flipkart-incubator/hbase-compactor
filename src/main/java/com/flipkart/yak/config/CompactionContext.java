@@ -74,6 +74,7 @@ public class CompactionContext implements Validable {
                 ", tableName:'" + tableName + '\'' +
                 ", nameSpace='" + nameSpace + '\'' +
                 ", rsGroup:'" + rsGroup + '\'' +
+                ", schedule:'" + compactionSchedule + '\''+
                 ", compactionProfileID:'" + compactionProfileID + '\'' +
                 '}';
     }
