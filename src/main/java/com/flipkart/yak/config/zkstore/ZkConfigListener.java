@@ -20,23 +20,12 @@ public class ZkConfigListener extends ConfigListener implements PathChildrenCach
     Semaphore semaphore = new Semaphore(-1);
 
     public ZkConfigListener(AbstractConfigLoader configLoader, CuratorFramework zookeeper) {
-        this.configLoader = configLoader;
+        super(configLoader);
         this.zookeeper = zookeeper;
     }
     @Override
     public void onChange() throws ConfigurationException {
-        if (configLoader != null) {
-            CompactionTriggerConfig config = configLoader.clearGetConfig();
-            log.info("reloaded config.. ");
-            log.info("loaded {} contexts and {} profiles.", config.getCompactionContexts().size(), config.getCompactionProfileConfigs().size());
-            if (log.isDebugEnabled()) {
-                for(CompactionProfileConfig compactionProfileConfig: config.getCompactionProfileConfigs()) {
-                    log.debug("Loaded {}: {}: {}", compactionProfileConfig.getID(), compactionProfileConfig.getAggregator(), compactionProfileConfig.getPolicies().size());
-                }
-                log.debug("{}", config.getCompactionContexts());
-            }
-            this.restart(config);
-        }
+        super.onChange();
     }
 
     private void setup() throws Exception {

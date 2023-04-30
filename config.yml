@@ -1,7 +1,12 @@
 zkConfig :
   connectionString: "localhost:2181"
   readOnly:  "true"
-hadoopUserName: "yak"
+
+k8sConfig:
+  namespace: "<namedspace_name>"
+  readTimeout: 50000
+
+hadoopUserName: "xxxx"
 
 logging:
   level: INFO
