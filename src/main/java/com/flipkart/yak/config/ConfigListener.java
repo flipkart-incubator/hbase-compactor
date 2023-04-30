@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.flipkart.yak.config.loader.AbstractConfigLoader;
 import com.flipkart.yak.core.CompactionRuntimeException;
 import com.flipkart.yak.core.JobSubmitter;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +15,30 @@ import org.apache.commons.configuration.ConfigurationException;
 public abstract class ConfigListener {
 
     JobSubmitter jobSubmitter;
-    protected abstract void onChange() throws ConfigurationException;
+    AbstractConfigLoader configLoader;
+
+    public ConfigListener(AbstractConfigLoader configLoader) {
+        this.configLoader = configLoader;
+    }
+
+    /**
+     * Implementing class should call this method whenever there is a change detected.
+     * @throws ConfigurationException if Unable to load new config
+     */
+    public void onChange() throws ConfigurationException{
+        if (configLoader != null) {
+            CompactionTriggerConfig config = configLoader.clearGetConfig();
+            log.info("reloaded config.. ");
+            log.info("loaded {} contexts and {} profiles.", config.getCompactionContexts().size(), config.getCompactionProfileConfigs().size());
+            if (log.isDebugEnabled()) {
+                for(CompactionProfileConfig compactionProfileConfig: config.getCompactionProfileConfigs()) {
+                    log.debug("Loaded {}: {}: {}", compactionProfileConfig.getID(), compactionProfileConfig.getAggregator(), compactionProfileConfig.getPolicies().size());
+                }
+                log.debug("{}", config.getCompactionContexts());
+            }
+            this.restart(config);
+        }
+    }
 
     public abstract void listen() throws CompactionRuntimeException, ConfigurationException;
     public final void register(JobSubmitter jobSubmitter) {
