@@ -28,6 +28,8 @@ public class K8sUtils {
     private static final String CONTEXT_CONFIGMAP_NAME = "compaction-trigger-context";
     private static final String APP_NAME_LABEL = "hbase-compactor";
     private static final Map<String, String> labels = new HashMap<>();
+
+    private static final Map<String, String> annotations = new HashMap<>();
     private static String namespace;
 
     private static CoreV1Api api;
@@ -51,6 +53,25 @@ public class K8sUtils {
         return "metadata.name="+CONTEXT_CONFIGMAP_NAME;
     }
 
+    public static void addLabels(Map<String,String> additionalLabels) {
+        if(additionalLabels!=null) {
+            additionalLabels.forEach((K,V)-> {
+                if(K!=null || V!=null){
+                    labels.put(K,V);
+                }
+            });
+        }
+    }
+
+    public static void addAnnotations(Map<String,String> additionalAnnotations) {
+        if(additionalAnnotations!=null) {
+            additionalAnnotations.forEach((K,V)-> {
+                if(K!=null || V!=null){
+                    annotations.put(K,V);
+                }
+            });
+        }
+    }
     public static CompactionProfileConfig getProfile(String rawData) {
         try {
             return serDeserManager.readValue(rawData, CompactionProfileConfig.class);
@@ -146,6 +167,9 @@ public class K8sUtils {
         V1ObjectMeta v1ObjectMetaForConfigMap = new V1ObjectMeta();
         v1ObjectMetaForConfigMap.setNamespace(namespace);
         v1ObjectMetaForConfigMap.setLabels(label);
+        if(annotations.size()>0) {
+            v1ObjectMetaForConfigMap.setAnnotations(annotations);
+        }
         v1ConfigMap.setData(data);
         v1ConfigMap.setMetadata(v1ObjectMetaForConfigMap);
         return v1ConfigMap;

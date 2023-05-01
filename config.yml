@@ -3,8 +3,13 @@ zkConfig :
   readOnly:  "true"
 
 k8sConfig:
-  namespace: "preprod-id-yak-ui"
+  namespace: "xxxx"
   readTimeout: 50000
+  additionalLabels:
+    hbase-compactor/app-id: "xxxx"
+    hbase-compactor/version: "v1"
+  additionalAnnotations:
+    meta.helm.sh/release-name: "xxxx"
 
 hadoopUserName: "yak"
 
