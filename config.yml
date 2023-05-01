@@ -11,7 +11,9 @@ k8sConfig:
   additionalAnnotations:
     meta.helm.sh/release-name: "xxxx"
 
-hadoopUserName: "xxxx"
+hadoopUserName: "yak"
+
+store: k8
 
 logging:
   level: INFO
