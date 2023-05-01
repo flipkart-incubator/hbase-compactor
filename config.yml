@@ -11,7 +11,7 @@ k8sConfig:
   additionalAnnotations:
     meta.helm.sh/release-name: "xxxx"
 
-hadoopUserName: "yak"
+hadoopUserName: "xxxx"
 
 store: k8
 
