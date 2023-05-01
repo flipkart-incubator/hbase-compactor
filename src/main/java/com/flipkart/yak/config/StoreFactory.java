@@ -89,6 +89,8 @@ public class StoreFactory {
         @Override
         public void init(K8sConfig resource) throws Exception {
             k8sConfig=resource;
+            K8sUtils.addLabels(k8sConfig.getAdditionalLabels());
+            K8sUtils.addAnnotations(k8sConfig.getAdditionalAnnotations());
             K8sUtils.init(resource.getNamespace());
         }
 
