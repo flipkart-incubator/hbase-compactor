@@ -1,7 +1,10 @@
 package com.flipkart.yak.config.k8s;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.NonNull;
+
+import java.util.Map;
 
 public class K8sConfig {
     /*
@@ -21,6 +24,35 @@ public class K8sConfig {
         picked up.
      */
     String kubeConfigEnvironmentValue = null;
+
+    /*
+        Additional labels if required, If not specified only one label will be used.
+     */
+    @JsonDeserialize
+    Map<String, String> additionalLabels = null;
+    /*
+        Additional annotations if required, If not set, no annotation will be applied.
+     */
+    @JsonDeserialize
+    Map<String, String> additionalAnnotations = null;
+
+    @JsonProperty
+    public Map<String, String> getAdditionalLabels() {
+        return additionalLabels;
+    }
+
+    @JsonProperty
+    public void setAdditionalLabels(Map<String, String> additionalLabels) {
+        this.additionalLabels = additionalLabels;
+    }
+    @JsonProperty
+    public Map<String, String> getAdditionalAnnotations() {
+        return additionalAnnotations;
+    }
+    @JsonProperty
+    public void setAdditionalAnnotations(Map<String, String> additionalAnnotations) {
+        this.additionalAnnotations = additionalAnnotations;
+    }
 
     @JsonProperty
     public int getReadTimeout() {
