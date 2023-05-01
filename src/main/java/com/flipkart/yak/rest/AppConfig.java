@@ -16,8 +16,21 @@ public class AppConfig extends Configuration {
 
     @NonNull
     String hadoopUserName;
+    @NonNull
+    String store;
 
     K8sConfig k8sConfig = null;
+
+    @JsonProperty
+    public String getStore() {
+        return store;
+    }
+
+    @JsonProperty
+    public void setStore(String store) {
+        this.store = store;
+    }
+
     @JsonProperty
     public K8sConfig getK8sConfig() {
         return k8sConfig;

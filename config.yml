@@ -3,10 +3,12 @@ zkConfig :
   readOnly:  "true"
 
 k8sConfig:
-  namespace: "<namedspace_name>"
+  namespace: "preprod-id-yak-ui"
   readTimeout: 50000
 
-hadoopUserName: "xxxx"
+hadoopUserName: "yak"
+
+store: k8
 
 logging:
   level: INFO
