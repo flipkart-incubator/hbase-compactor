@@ -9,7 +9,7 @@ Hbase Major compaction is a resource intensive operation. One would like to cont
 
 ## Build
 ```
-mvn clean install 
+mvn clean package 
 ```
 
 ## Sample Config File
@@ -17,8 +17,9 @@ mvn clean install
 <configuration>
     <contexts>
         <context>
-            <clusterID>preprod-id-yak-perf1-ch-zk-1:2181,preprod-id-yak-perf1-ch-zk-2:2181,preprod-id-yak-perf1-ch-zk-3:2181:/preprod-id-yak-perf1</clusterID>
-            <tableName>preprod_compaction:table_1</tableName>
+            <clusterID>zookeeper:port:hbase_root_path</clusterID>
+            <tableName>table_name</tableName>
+            <namespace>namespace</namespace>
             <startTime>16.5</startTime>
             <endTime>17.00</endTime>
             <profileID>testID</profileID>
