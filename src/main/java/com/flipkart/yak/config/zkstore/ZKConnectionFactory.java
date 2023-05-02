@@ -34,6 +34,10 @@ public class ZKConnectionFactory {
         log.info("creating base path");
         if( zooKeeper != null) {
             try {
+                if(zooKeeper.checkExists().forPath(ZKDataUtil.getBasePath()) == null) {
+                    log.info("{} Does not exists, creating.",ZKDataUtil.getBasePath());
+                    zooKeeper.create().forPath(ZKDataUtil.getBasePath());
+                }
                 if(zooKeeper.checkExists().forPath(ZKDataUtil.getContextBasePath()) == null) {
                     log.info("{} Does not exists, creating.",ZKDataUtil.getContextBasePath());
                     zooKeeper.create().forPath(ZKDataUtil.getContextBasePath());

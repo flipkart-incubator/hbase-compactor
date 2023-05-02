@@ -1,7 +1,7 @@
 zkConfig :
   connectionString: "localhost:2181"
-  readOnly:  "true"
-hadoopUserName: "yak"
+  readOnly:  "false"
+hadoopUserName: "xxxx"
 
 logging:
   level: INFO
