@@ -1,0 +1,38 @@
+<configuration>
+    <contexts>
+        <context>
+            <clusterID>zookeeper1:2181,zookeeper2:2181:/hbase</clusterID>
+            <tableName>namespace:table</tableName>
+            <startTime>18</startTime>
+            <endTime>20</endTime>
+            <profileID>testID</profileID>
+        </context>
+        <context>
+            <clusterID>zookeeper1:2181,zookeeper2:2181:/hbase</clusterID>
+            <tableName>namespace2:table2</tableName>
+            <startTime>18</startTime>
+            <endTime>20</endTime>
+        </context>
+    </contexts>
+
+    <profiles>
+        <profile>
+            <profileID>testID</profileID>
+            <policies>
+                <policy>
+                    <name>com.flipkart.yak.policies.NaiveRegionSelectionPolicy</name>
+                    <configurations>
+                        <configuration>
+                            <name>hello</name>
+                            <value>world</value>
+                        </configuration>
+                    </configurations>
+                </policy>
+            </policies>
+            <aggregator>
+                <name>com.flipkart.yak.aggregator.SimpleUnionAggregator</name>
+                <configurations></configurations>
+            </aggregator>
+        </profile>
+    </profiles>
+</configuration>
