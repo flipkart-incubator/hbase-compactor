@@ -63,18 +63,6 @@ public class ConfigController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public List<CompactionProfileConfig> getProfiles() {
-
-//        List<Pair<String, String>> test = new ArrayList<>();
-//        test.add(new Pair<>("aggregator.chain.policy.order", "com.flipkart.yak.policies.TimestampAwareSelectionPolicy,com.flipkart.yak.policies.NaiveRegionSelectionPolicy"));
-//        SerializedConfigurable aggregator = new SerializedConfigurable("com.flipkart.yak.aggregator.ChainReportAggregator", test);
-//        List<Pair<String, String>> test1 = new ArrayList<>();
-//        SerializedConfigurable policy1 = new SerializedConfigurable("com.flipkart.yak.policies.NaiveRegionSelectionPolicy", test1);
-//        SerializedConfigurable policy2 = new SerializedConfigurable("com.flipkart.yak.policies.TimestampAwareSelectionPolicy", new ArrayList<>());
-//        CompactionProfileConfig compactionProfileConfig = new CompactionProfileConfig("default", new HashSet<>(),aggregator);
-//        List<CompactionProfileConfig> response = new ArrayList<>();
-//        compactionProfileConfig.getPolicies().add(policy1);
-//        compactionProfileConfig.getPolicies().add(policy2);
-//        response.add(compactionProfileConfig);
         try {
             return abstractConfigLoader.getProfiles(storeResource);
         } catch (ConfigurationException e) {
