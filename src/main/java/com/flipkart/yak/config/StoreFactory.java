@@ -83,12 +83,18 @@ public class StoreFactory {
         private static AbstractConfigLoader abstractConfigLoader;
         private static AbstractConfigWriter abstractConfigWriter;
         private static ConfigListener configListener;
-
         private static K8sConfig k8sConfig;
+        private static String KUBE_CONFIG_KEY="KUBECONFIG";
 
         @Override
         public void init(K8sConfig resource) throws Exception {
             k8sConfig=resource;
+            /*
+                Set value of 'KUBECONFIG' system property if service account details are present at some other place which is not default.
+             */
+            if(k8sConfig.getKubeConfigEnvironmentValue() != null) {
+                System.setProperty(KUBE_CONFIG_KEY, k8sConfig.getKubeConfigEnvironmentValue());
+            }
             K8sUtils.addLabels(k8sConfig.getAdditionalLabels());
             K8sUtils.addAnnotations(k8sConfig.getAdditionalAnnotations());
             K8sUtils.init(resource.getNamespace());
