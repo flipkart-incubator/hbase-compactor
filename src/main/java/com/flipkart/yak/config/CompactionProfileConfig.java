@@ -1,21 +1,28 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
 import com.google.common.collect.Sets;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 import org.apache.commons.configuration.ConfigurationException;
 
 import java.util.Objects;
 import java.util.Set;
 
-@Getter @Setter
+@Data
+@SuperBuilder
 @AllArgsConstructor
+@Jacksonized
 public class CompactionProfileConfig implements Validable {
+
     @NonNull final String ID;
+
+
     Set<SerializedConfigurable> policies;
+
+
     @NonNull final SerializedConfigurable aggregator;
 
 

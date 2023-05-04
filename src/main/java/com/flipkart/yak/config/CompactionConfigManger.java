@@ -8,9 +8,9 @@ public class CompactionConfigManger {
 
     private static CompactionTriggerConfig compactionTriggerConfig;
 
-    public static CompactionTriggerConfig get() throws ConfigurationException {
+    public static CompactionTriggerConfig get(String... args) throws ConfigurationException {
         if(compactionTriggerConfig == null) {
-            AbstractConfigLoader configLoader = new XMLConfigLoader();
+            AbstractConfigLoader configLoader = StoreFactory.getInstance().getLoader();
             compactionTriggerConfig = configLoader.getConfig();
         }
         return compactionTriggerConfig;

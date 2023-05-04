@@ -1,10 +1,12 @@
 package com.flipkart.yak.core;
 
 import com.codahale.metrics.MetricRegistry;
+import com.flipkart.yak.commons.ProfileInventoryFactory;
 import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
 import com.flipkart.yak.interfaces.CompactionExecutable;
+import com.flipkart.yak.interfaces.ProfileInventory;
 import com.flipkart.yak.interfaces.Submittable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +33,8 @@ public class ThreadedCompactionJob implements Submittable {
        compactionContext = context;
        compactionExecutable = new RegionByRegionThreadedCompactionJob();
        compactionExecutable.initResources(compactionContext);
-       compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable);
-
+       ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
+       compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
     }
 
     @Override
@@ -51,6 +53,7 @@ public class ThreadedCompactionJob implements Submittable {
                 Thread.sleep(sleepFor);
             } catch (InterruptedException e) {
                 log.error("sleep-wait interrupted, exiting ..!");
+                Thread.currentThread().interrupt();
                 this.compactionExecutable.releaseResources();
                 break;
             }

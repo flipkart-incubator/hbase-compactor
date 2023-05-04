@@ -1,23 +1,32 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.jackson.Jacksonized;
 import org.apache.commons.configuration.ConfigurationException;
 
 import java.util.Objects;
 
-@Getter @Setter
+
+@Data
+@SuperBuilder
 @RequiredArgsConstructor
+@Jacksonized
 public class CompactionContext implements Validable {
 
+
     @NonNull final String clusterID;
+
     @NonNull final CompactionSchedule compactionSchedule;
+
     String tableName;
+
     String nameSpace = "default";
+
     String rsGroup = "default";
+
     @NonNull  final String compactionProfileID;
 
     @Override
@@ -65,6 +74,7 @@ public class CompactionContext implements Validable {
                 ", tableName:'" + tableName + '\'' +
                 ", nameSpace='" + nameSpace + '\'' +
                 ", rsGroup:'" + rsGroup + '\'' +
+                ", schedule:'" + compactionSchedule + '\''+
                 ", compactionProfileID:'" + compactionProfileID + '\'' +
                 '}';
     }
