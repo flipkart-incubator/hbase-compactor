@@ -35,7 +35,7 @@ public class HCompactor {
             JobSubmitter taskSubmitter = new JobSubmitter();
             MonitorService.start();
             Factory factory = StoreFactory.getInstance();
-            factory.init(appConfig.getZkConfig());
+            factory.init(appConfig.getK8sConfig());
             ConfigListener configListener = factory.getConfigListener();
             configListener.register(taskSubmitter);
             configListener.listen();

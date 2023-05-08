@@ -25,7 +25,8 @@ public class ConfigManager extends Application<AppConfig> {
     @Override
     public void run(AppConfig appConfig, Environment environment) throws Exception {
         Factory storeFactory = StoreFactory.getInstance();
-        ConfigController configController = new ConfigController(storeFactory, appConfig.getZkConfig().getConnectionString());
+        storeFactory.init(appConfig.getK8sConfig());
+        ConfigController configController = new ConfigController(storeFactory, appConfig.getK8sConfig().getNamespace());
         environment.jersey().register(configController);
         environment.healthChecks().register("default", new DefaultHealthCheck());
     }

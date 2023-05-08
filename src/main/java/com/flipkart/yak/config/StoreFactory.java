@@ -1,9 +1,12 @@
 package com.flipkart.yak.config;
 
+import com.flipkart.yak.config.k8s.*;
 import com.flipkart.yak.config.loader.AbstractConfigLoader;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import com.flipkart.yak.config.zkstore.*;
 import com.flipkart.yak.interfaces.Factory;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -20,7 +23,7 @@ public class StoreFactory {
 
     public static Factory getInstance() {
         if (storeFactory == null) {
-            storeFactory = new ZKStoreFactory();
+            storeFactory = new K8sStoreFactory();
         }
         return storeFactory;
     }
@@ -68,6 +71,63 @@ public class StoreFactory {
             }
             if(configListener == null) {
                 configListener = new ZkConfigListener(abstractConfigLoader, zookeeper);
+            }
+            return configListener;
+        }
+    }
+
+    /**
+     * Produces DAO for K8s based store.
+     */
+    static class K8sStoreFactory implements Factory<K8sConfig> {
+        private static AbstractConfigLoader abstractConfigLoader;
+        private static AbstractConfigWriter abstractConfigWriter;
+        private static ConfigListener configListener;
+        private static K8sConfig k8sConfig;
+        private static String KUBE_CONFIG_KEY="KUBECONFIG";
+
+        @Override
+        public void init(K8sConfig resource) throws Exception {
+            k8sConfig=resource;
+            /*
+                Set value of 'KUBECONFIG' system property if service account details are present at some other place which is not default.
+             */
+            if(k8sConfig.getKubeConfigEnvironmentValue() != null) {
+                System.setProperty(KUBE_CONFIG_KEY, k8sConfig.getKubeConfigEnvironmentValue());
+            }
+            K8sUtils.addLabels(k8sConfig.getAdditionalLabels());
+            K8sUtils.addAnnotations(k8sConfig.getAdditionalAnnotations());
+            K8sUtils.init(resource.getNamespace());
+        }
+
+        @Override
+        public AbstractConfigLoader getLoader() {
+            if (abstractConfigLoader != null) {
+                return abstractConfigLoader;
+            }
+            abstractConfigLoader = new K8sConfigLoader();
+            abstractConfigLoader.addResource(k8sConfig.getNamespace());
+            return abstractConfigLoader;
+        }
+
+        @Override
+        public AbstractConfigWriter getWriter() {
+            if (abstractConfigWriter != null) {
+                return abstractConfigWriter;
+            }
+            abstractConfigWriter = new K8sConfigWriter();
+            return abstractConfigWriter;
+        }
+
+        @Override
+        public ConfigListener getConfigListener() throws Exception {
+            if(configListener == null) {
+                AbstractConfigLoader configLoader = getLoader();
+                CoreV1Api coreV1Api = K8sUtils.getApi();
+                ApiClient client = K8sUtils.getClient();
+                client.setConnectTimeout(k8sConfig.getConnectionTimeout());
+                client.setReadTimeout(k8sConfig.getReadTimeout());
+                configListener = new K8sConfigListener(configLoader,coreV1Api, client, k8sConfig.getNamespace());
             }
             return configListener;
         }

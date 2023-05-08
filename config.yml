@@ -1,6 +1,16 @@
 zkConfig :
   connectionString: "localhost:2181"
-  readOnly:  "false"
+  readOnly:  "true"
+
+k8sConfig:
+  namespace: "xxxx"
+  readTimeout: 50000
+  additionalLabels:
+    hbase-compactor/app-id: "xxxx"
+    hbase-compactor/version: "v1"
+  additionalAnnotations:
+    meta.helm.sh/release-name: "xxxx"
+
 hadoopUserName: "xxxx"
 
 logging:
