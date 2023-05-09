@@ -5,10 +5,13 @@ import com.flipkart.yak.config.loader.AbstractConfigLoader;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import com.flipkart.yak.config.zkstore.*;
 import com.flipkart.yak.interfaces.Factory;
+import com.flipkart.yak.rest.AppConfig;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
+
+import java.util.Objects;
 
 /**
  * Produces {@link Factory}
@@ -20,13 +23,34 @@ public class StoreFactory {
 
     private static Factory storeFactory;
 
+    public static class StoreFactoryBuilder {
+        private static AppConfig appConfig;
 
-    public static Factory getInstance() {
-        if (storeFactory == null) {
-            storeFactory = new K8sStoreFactory();
+        public StoreFactoryBuilder withConfig(AppConfig config) {
+            if( appConfig!= null) {
+                throw new IllegalStateException( "AppConfig is already initialised");
+            }
+            appConfig = config;
+            return this;
         }
-        return storeFactory;
+        public Factory getFactory() throws Exception {
+            if( appConfig==null){
+                throw new IllegalStateException("Config is not initialised, Factory can not be created");
+            }
+            if(storeFactory == null) {
+                if(appConfig.getStore().equals("zk")) {
+                    storeFactory = new ZKStoreFactory();
+                    storeFactory.init(appConfig.getZkConfig());
+                }
+                if(appConfig.getStore().equals("k8")) {
+                    storeFactory = new K8sStoreFactory();
+                    storeFactory.init(appConfig.getK8sConfig());
+                }
+            }
+            return storeFactory;
+         }
     }
+
 
     /**
      * Produces DAOs for Zookeeper Based Store

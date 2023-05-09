@@ -13,6 +13,8 @@ k8sConfig:
 
 hadoopUserName: "xxxx"
 
+store: k8
+
 logging:
   level: INFO
   appenders:

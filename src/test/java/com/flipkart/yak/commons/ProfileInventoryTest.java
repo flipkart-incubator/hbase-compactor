@@ -31,6 +31,7 @@ public class ProfileInventoryTest {
             CompactionTriggerConfig compactionTriggerConfig = configLoader.getConfig();
             Set<CompactionProfileConfig> compactionProfiles = compactionTriggerConfig.getCompactionProfileConfigs();
             ProfileInventory profileInventory  = ProfileInventoryFactory.getProfileInventory();
+            profileInventory.reload(compactionTriggerConfig);
             CompactionProfile profile = profileInventory.loadProfileFromName(compactionProfiles.iterator().next());
             assert profile.getAggregator().getClass().getName().equals("com.flipkart.yak.aggregator.SimpleUnionAggregator");
             assert compactionProfiles.size() == 1;
@@ -49,6 +50,7 @@ public class ProfileInventoryTest {
             CompactionTriggerConfig compactionTriggerConfig = configLoader.getConfig();
             Set<CompactionProfileConfig> compactionProfiles = compactionTriggerConfig.getCompactionProfileConfigs();
             ProfileInventory profileInventory  = ProfileInventoryFactory.getProfileInventory();
+            profileInventory.reload(compactionTriggerConfig);
             CompactionProfile profile = profileInventory.loadProfileFromName(compactionProfiles.iterator().next());
             Set<String> profileNames = profile.getPolicies().stream().map(e -> e.getClass().getName()).collect(Collectors.toSet());
             assert profile.getAggregator().getClass().getName().equals("com.flipkart.yak.aggregator.ChainReportAggregator");

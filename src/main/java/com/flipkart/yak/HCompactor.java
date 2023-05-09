@@ -34,8 +34,8 @@ public class HCompactor {
             System.setProperty(HADOOP_USER_NAME_KEY, appConfig.getHadoopUserName());
             JobSubmitter taskSubmitter = new JobSubmitter();
             MonitorService.start();
-            Factory factory = StoreFactory.getInstance();
-            factory.init(appConfig.getK8sConfig());
+            StoreFactory.StoreFactoryBuilder builder = new StoreFactory.StoreFactoryBuilder();
+            Factory factory = builder.withConfig(appConfig).getFactory();
             ConfigListener configListener = factory.getConfigListener();
             configListener.register(taskSubmitter);
             configListener.listen();

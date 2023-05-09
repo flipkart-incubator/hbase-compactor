@@ -2,7 +2,6 @@ package com.flipkart.yak.core;
 
 import com.flipkart.yak.commons.ConnectionInventory;
 import com.flipkart.yak.commons.ProfileInventoryFactory;
-import com.flipkart.yak.config.CompactionConfigManger;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionTriggerConfig;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +10,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
-import org.glassfish.jersey.servlet.spi.FilterUrlMappingsProvider;
 
 import java.io.IOException;
 import java.util.ArrayList;
