@@ -4,6 +4,8 @@ COPY . /build/
 
 FROM jfrog.fkinternal.com/runtime/debian-10/java-jre:8u202 as baseruntime
 ARG AppName
+RUN addgroup --gid 1011 rssaigus
+RUN useradd --create-home --uid 1011 --gid 1011 --shell /bin/bash --system rssaigus
 COPY --from=builder [ "/build/target/hbase-compactor-*.jar", "/var/lib/${AppName}/" ]
 COPY --from=builder [ "/build/target/lib/*", "/var/lib/${AppName}/lib/" ]
 COPY --from=builder [ "/entrypoint", "/entrypoint" ]
@@ -12,4 +14,4 @@ RUN sed -i "s/__PACKAGE__/$AppName/g" "/entrypoint"
 RUN chmod +x "/entrypoint"
 ENTRYPOINT ["/entrypoint"]
 
-CMD ["com.flipkart.yak.HCompactor"]
+CMD ["com.flipkart.yak.ConfigManager server config.yml"]

@@ -1,6 +1,0 @@
-dependencies:
-- name: fpg-serviceframework
-  repository: https://jfrog.fkinternal.com/artifactory/indradhanush-helm/
-  version: 1.4.1
-digest: sha256:7e8619abd899e90d89cd04a5aa879666d58d0f3bd67b4f0fd39435d4b1d53117
-generated: "2023-03-20T12:03:40.377363+05:30"

@@ -9,7 +9,7 @@ mtl:
   cosmos:
     statsd: disabled
     tail: disabled
-    config: cosmos-config-worker
+    config: cosmos-compactor
   asterix: disabled
   logsvc:
     name: mtlconfig-worker
@@ -21,15 +21,14 @@ pod:
   replicaCount: 1
 
 hostpopulator:
-  state: disabled
+  state: enabled
 
 image:
-  scheduler-worker:
-    repository: indradhanush/scheduler-worker
+  yak-compactor:
+    registry: jfrog.fkinternal.com
+    repository: yak-compactor/fk-hbase-compactor
     volumes:
-      - app-config
-      - app-log
-      - preprod-config-service
+      - app
     livenessCheck:
       initialDelay: 20
       checkInterval: 15
@@ -62,7 +61,7 @@ volumes:
       - key: fk-env
         path: fk-service
 configMaps:
-  envName: preprod
+  envName: playground
   configs:
     - name: app-config-worker
       source: dir
