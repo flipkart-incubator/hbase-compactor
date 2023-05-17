@@ -20,12 +20,15 @@ spec:
     - name: pr
       value: ""
       type: parameter
+    - name: git_clone_ref
+      value: incubator
+      type: parameter
     artifacts: []
 deployparams:
   env_type: ""
   env_name: ""
   env_id: 0
   cluster_context_id: 0
-  registry_id: 0
+  registry_id: 1265
   cluster_provider: ""
   deploystrategy: null
