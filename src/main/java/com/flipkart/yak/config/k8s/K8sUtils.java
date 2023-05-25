@@ -12,12 +12,15 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
+import io.kubernetes.client.util.KubeConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,6 +98,7 @@ public class K8sUtils {
         }
         try {
             client = Config.defaultClient();
+            log.info("Cluster URL :{}", client.getBasePath());
         } catch (IOException e) {
             throw new ConfigurationException(e);
         }
@@ -133,6 +137,7 @@ public class K8sUtils {
         try {
             v1ConfigMapList = K8sUtils.execute(null,api);
         } catch (ConfigurationException e) {
+            log.error("Could not read configMapList : {}", e.getMessage());
             throw new RuntimeException(e);
         }
         V1ConfigMap v1ProfileConfigMap = getBasicV1ConfigMap(namespace);
@@ -212,6 +217,7 @@ public class K8sUtils {
      */
     public static V1ConfigMapList execute(String fields, CoreV1Api coreV1Api) throws ConfigurationException {
         String namespace = K8sUtils.getNamespace(coreV1Api);
+        log.info("Executing ListNamespace Configmaps for {} with fields {}", namespace, fields);
         String labels = K8sUtils.getLabels();
         V1ConfigMapList configMapList= null;
         try {
