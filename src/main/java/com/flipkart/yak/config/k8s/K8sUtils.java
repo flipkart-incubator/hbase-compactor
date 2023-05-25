@@ -97,7 +97,7 @@ public class K8sUtils {
             return api;
         }
         try {
-            client = Config.defaultClient();
+            client = Config.fromCluster();
             log.info("Cluster URL :{}", client.getBasePath());
         } catch (IOException e) {
             throw new ConfigurationException(e);
