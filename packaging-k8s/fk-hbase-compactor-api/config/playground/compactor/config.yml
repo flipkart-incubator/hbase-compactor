@@ -3,47 +3,23 @@ zkConfig :
   readOnly:  "true"
 
 k8sConfig:
-  namespace: "xxxx"
+  namespace: "yak-core-playground"
   readTimeout: 50000
   additionalLabels:
-    hbase-compactor/app-id: "xxxx"
+    hbase-compactor/app-id: "playground-yak-core"
     hbase-compactor/version: "v1"
   additionalAnnotations:
-    meta.helm.sh/release-name: "xxxx"
+    meta.helm.sh/release-name: "yak-hbase-compactor"
 
-hadoopUserName: "xxxx"
+hadoopUserName: "yak"
 
 store: k8
 
 logging:
   level: INFO
   appenders:
-    - type: file
-      currentLogFilename: compactor.log
-      threshold: INFO
-      archive: true
-      archivedLogFilenamePattern: compactor-%i.log
-      archivedFileCount: 1
-      maxFileSize: 800MB
-      timeZone: IST
-      queueSize: 1024
-      discardingThreshold: 20
-      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
-      neverBlock: true
-    - type: file
-      currentLogFilename: error.log
-      threshold: ERROR
-      archive: true
-      archivedLogFilenamePattern: error-%i.log
-      archivedFileCount: 1
-      maxFileSize: 200MB
-      timeZone: IST
-      queueSize: 1024
-      discardingThreshold: 20
-      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
-      neverBlock: true
     - type: console
-      threshold: ${logger.console.level}
+      threshold: INFO
       timeZone: IST
       logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
 
@@ -57,12 +33,7 @@ server:
       port: 8083
   requestLog:
     appenders:
-      - type: file
-        currentLogFilename: access.log
-        archivedLogFilenamePattern: access-%i.log
-        logFormat: '%h [%date{dd MMM yyyy;HH:mm:ss.SSS}] - "%r" %s %b %D'
-        archive: true
-        archivedFileCount: 1
+      - type: console
+        threshold: INFO
         timeZone: IST
-        maxFileSize: 200MB
-        neverBlock: true
+        logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"

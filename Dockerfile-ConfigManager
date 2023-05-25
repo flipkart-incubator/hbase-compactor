@@ -14,4 +14,4 @@ RUN sed -i "s/__PACKAGE__/$AppName/g" "/entrypoint"
 RUN chmod +x "/entrypoint"
 ENTRYPOINT ["/entrypoint"]
 
-CMD ["com.flipkart.yak.ConfigManager server config.yml"]
+CMD ["com.flipkart.yak.ConfigManager server /etc/hbase-compactor/config.yml"]
