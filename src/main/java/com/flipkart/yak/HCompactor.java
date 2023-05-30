@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 
 import java.io.File;
+import java.net.URL;
 
 
 /**
@@ -29,7 +30,11 @@ public class HCompactor {
     public static void main(String[] args) {
         ObjectMapper objectMapper = Jackson.newObjectMapper(new YAMLFactory());
         try {
-            AppConfig appConfig = objectMapper.readValue(new File(DEFAULT_CONFIG_FILE), AppConfig.class);
+            URL url = Thread.currentThread().getContextClassLoader().getResource(DEFAULT_CONFIG_FILE);
+            if(url==null) {
+                throw new ConfigurationException("Could not load config file");
+            }
+            AppConfig appConfig = objectMapper.readValue(new File(url.getPath()), AppConfig.class);
             appConfig.setLoggingFactory(new ExternalLoggingFactory());
             System.setProperty(HADOOP_USER_NAME_KEY, appConfig.getHadoopUserName());
             JobSubmitter taskSubmitter = new JobSubmitter();
