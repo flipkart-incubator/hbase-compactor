@@ -4,6 +4,9 @@ zkConfig :
 
 k8sConfig:
   namespace: "yak-core-playground"
+  kubeApiHost: "10.83.49.0"
+  kubeApiPort: "6443"
+  kubeConfigEnvironmentValue: "/etc/hbase-compactor/secret-token"
   readTimeout: 50000
   additionalLabels:
     hbase-compactor/app-id: "playground-yak-core"

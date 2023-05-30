@@ -18,6 +18,29 @@ pod:
 hostpopulator:
   state: enabled
 
+services:
+  - name: playground-yak-compactor
+    type: LoadBalancer
+    selector:
+      app: yak-ui
+    ports:
+      - port: 8082
+        targetPort: 8082
+        protocol: TCP
+        name: http
+    LoadBalancer:
+      vip: playground-yak-compactor-vip-1
+      backendService: playground-yak-compactor-vip-1
+      frontendPort: 80
+      backendPort: 8082
+      healthCheckPort: 8083
+      healthCheckPath: /healthcheck
+      healthCheckTimeout: 1000ms
+      healthCheckInterval: 5s
+      loadBalancingAlgorithm: leastconn
+      doNotDeleteVip: "true"
+      mode: "http"
+
 image:
   yak-compactor:
     registry: jfrog.fkinternal.com
