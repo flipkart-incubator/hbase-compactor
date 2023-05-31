@@ -42,7 +42,7 @@ services:
       mode: "http"
 
 image:
-  yak-compactor:
+  yak-compactork:
     registry: jfrog.fkinternal.com
     repository: yak-compactor/fk-hbase-compactor-api
     volumes:

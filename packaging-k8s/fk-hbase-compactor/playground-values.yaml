@@ -22,7 +22,6 @@ image:
   yak-compactor:
     registry: jfrog.fkinternal.com
     repository: yak-compactor/fk-hbase-compactor
-    tag: 2305373-flow-63d3fe4e31afc0c014eb290f6678c0f0678b9d88-30-May-23_01-59-10
     volumes:
       - app
     livenessCheck:
@@ -35,8 +34,8 @@ image:
         containerPort: 9311
     maxCpuLimit: 1
     maxCpuAsk: 1
-    maxMemoryLimit: 5Gi
-    maxMemoryAsk: 5Gi
+    maxMemoryLimit: 2Gi
+    maxMemoryAsk: 2Gi
 
 volumes:
   - name: app
@@ -44,15 +43,6 @@ volumes:
     value: app-config
     mountPath: /etc/hbase-compactor/
 
-configMaps:
-  envName: playground
-  configs:
-    - name: cosmos
-      source: dir
-      sourceLoc: cosmos
-    - name: host-populator-config
-      source: dir
-      sourceLoc: host-populator
 
 annotations:
   sidecar.istio.io/inject: "false"
