@@ -24,6 +24,35 @@ public class K8sConfig {
         picked up.
      */
     String kubeConfigEnvironmentValue = null;
+    /*
+        If specified, i.e. non-null, system property ENV_SERVICE_HOST will be set.
+     */
+    String kubeApiHost = null;
+
+    @JsonProperty
+    public String getKubeApiHost() {
+        return kubeApiHost;
+    }
+
+    @JsonProperty
+    public void setKubeApiHost(String kubeApiHost) {
+        this.kubeApiHost = kubeApiHost;
+    }
+
+    @JsonProperty
+    public String getKubeApiPort() {
+        return kubeApiPort;
+    }
+
+    @JsonProperty
+    public void setKubeApiPort(String kubeApiPort) {
+        this.kubeApiPort = kubeApiPort;
+    }
+
+    /*
+            If specified, i.e. non-null, system property ENV_SERVICE_PORT will be set.
+         */
+    String kubeApiPort = null;
 
     /*
         Additional labels if required, If not specified only one label will be used.

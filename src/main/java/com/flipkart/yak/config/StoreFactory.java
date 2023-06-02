@@ -8,6 +8,7 @@ import com.flipkart.yak.interfaces.Factory;
 import com.flipkart.yak.rest.AppConfig;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.util.Config;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 
@@ -117,7 +118,16 @@ public class StoreFactory {
                 Set value of 'KUBECONFIG' system property if service account details are present at some other place which is not default.
              */
             if(k8sConfig.getKubeConfigEnvironmentValue() != null) {
-                System.setProperty(KUBE_CONFIG_KEY, k8sConfig.getKubeConfigEnvironmentValue());
+                log.info("Setting {} with {}", Config.ENV_KUBECONFIG, k8sConfig.getKubeConfigEnvironmentValue());
+                System.setProperty(Config.ENV_KUBECONFIG, k8sConfig.getKubeConfigEnvironmentValue());
+            }
+            if(k8sConfig.getKubeApiHost() != null) {
+                log.info("Setting {} with {}", Config.ENV_SERVICE_HOST, k8sConfig.getKubeApiHost());
+                System.setProperty(Config.ENV_SERVICE_HOST, k8sConfig.getKubeApiHost());
+            }
+            if(k8sConfig.getKubeApiPort() != null) {
+                log.info("Setting {} with {}", Config.ENV_SERVICE_PORT, k8sConfig.getKubeApiPort());
+                System.setProperty(Config.ENV_SERVICE_PORT, k8sConfig.getKubeApiPort());
             }
             K8sUtils.addLabels(k8sConfig.getAdditionalLabels());
             K8sUtils.addAnnotations(k8sConfig.getAdditionalAnnotations());

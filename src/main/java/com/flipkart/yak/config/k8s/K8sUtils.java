@@ -15,9 +15,10 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Config;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hbase.util.Pair;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -93,14 +94,49 @@ public class K8sUtils {
         if(api!=null) {
             return api;
         }
-        try {
-            client = Config.defaultClient();
-        } catch (IOException e) {
-            throw new ConfigurationException(e);
+        if(System.getProperty(Config.ENV_KUBECONFIG) == null) {
+            try {
+                client = Config.defaultClient();
+            } catch (IOException e) {
+                throw new ConfigurationException(e);
+            }
         }
+        else {
+            String url = Config.DEFAULT_FALLBACK_HOST;
+            if(System.getProperty(Config.ENV_SERVICE_HOST) != null && System.getProperty(Config.ENV_SERVICE_PORT)!=null) {
+                String host = System.getProperty(Config.ENV_SERVICE_HOST);
+                String port = System.getProperty(Config.ENV_SERVICE_PORT);
+                String protocol = "https://";
+                url=protocol+host+":"+port;
+            }
+            log.info("URL: {}", url);
+            String token = null;
+            try {
+                token = getToken(System.getProperty(Config.ENV_KUBECONFIG));
+            } catch (FileNotFoundException e) {
+                log.error("Could not read file: {}", e.getMessage());
+                throw new ConfigurationException(e);
+            }
+            client = Config.fromToken(url, token, false);
+        }
+        log.info("Cluster URL :{}", client.getBasePath());
         api = new CoreV1Api(client);
         initBaseConfigMap(resource);
         return api;
+    }
+
+    private static String getToken(String file) throws FileNotFoundException {
+        File tokenFile =new File(file);
+        if(tokenFile.exists()) {
+            try {
+                return FileUtils.readFileToString(tokenFile, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                log.error("Could not read token file: {}", e.getMessage());
+                throw new RuntimeException(e);
+            }
+        }
+        log.warn("Could not find the file {}", tokenFile);
+        throw new FileNotFoundException();
     }
 
     public static ApiClient getClient() {
@@ -133,6 +169,7 @@ public class K8sUtils {
         try {
             v1ConfigMapList = K8sUtils.execute(null,api);
         } catch (ConfigurationException e) {
+            log.error("Could not read configMapList : {}", e.getMessage());
             throw new RuntimeException(e);
         }
         V1ConfigMap v1ProfileConfigMap = getBasicV1ConfigMap(namespace);
@@ -212,6 +249,7 @@ public class K8sUtils {
      */
     public static V1ConfigMapList execute(String fields, CoreV1Api coreV1Api) throws ConfigurationException {
         String namespace = K8sUtils.getNamespace(coreV1Api);
+        log.info("Executing ListNamespace Configmaps for {} with fields {}", namespace, fields);
         String labels = K8sUtils.getLabels();
         V1ConfigMapList configMapList= null;
         try {
