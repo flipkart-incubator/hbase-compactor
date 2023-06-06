@@ -16,7 +16,7 @@ pod:
   replicaCount: 1
 
 hostpopulator:
-  state: enabled
+  state: disabled
 
 services:
   - name: preprod-yak-compactor

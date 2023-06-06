@@ -1,7 +1,7 @@
-namespace: yak-core-playground
+namespace: yak-compaction-preprod
 fcp:
   team: "yak"
-  appId: "playground-yak-core"
+  appId: "preprod-yak-compaction"
   mail: "yak-dev"
   service: "fk-hbase-compactor"
 
@@ -16,7 +16,7 @@ pod:
   replicaCount: 1
 
 hostpopulator:
-  state: enabled
+  state: disabled
 
 image:
   yak-compactor:
@@ -32,8 +32,8 @@ image:
     ports:
       - name: http
         containerPort: 9311
-    maxCpuLimit: 1
-    maxCpuAsk: 1
+    maxCpuLimit: 3
+    maxCpuAsk: 3
     maxMemoryLimit: 2Gi
     maxMemoryAsk: 2Gi
 
