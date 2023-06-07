@@ -21,7 +21,7 @@ spec:
       value: ""
       type: parameter
     - name: git_clone_ref
-      value: incubator
+      value: master_V2
       type: parameter
     artifacts: []
 deployparams:
