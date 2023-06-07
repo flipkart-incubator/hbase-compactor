@@ -21,11 +21,18 @@
 
     <distributionManagement>
          <repository>
-                  <id>clojars</id>
-                  <name>Clojars repository</name>
-                  <url>https://clojars.org/repo</url>
+             <id>fk-art-release</id>
+             <name>libs-rel</name>
+             <url>http://jfrog.fkinternal.com/artifactory/maven_virtual</url>
          </repository>
     </distributionManagement>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>fk-art-release</id>
+            <name>libs-rel</name>
+            <url>http://jfrog.fkinternal.com/artifactory/maven_virtual</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <scm>
          <connection>scm:git:https://github.com/flipkart-incubator/hbase-compactor.git</connection>
