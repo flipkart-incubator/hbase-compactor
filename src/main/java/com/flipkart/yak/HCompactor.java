@@ -36,7 +36,7 @@ public class HCompactor {
             }
             AppConfig appConfig = objectMapper.readValue(new File(url.getPath()), AppConfig.class);
             appConfig.setLoggingFactory(new ExternalLoggingFactory());
-            System.setProperty(HADOOP_USER_NAME_KEY, appConfig.getHadoopUserName());
+            setHadoopUserNameKey(appConfig);
             JobSubmitter taskSubmitter = new JobSubmitter();
             MonitorService.start();
             StoreFactory.StoreFactoryBuilder builder = new StoreFactory.StoreFactoryBuilder();
@@ -48,6 +48,17 @@ public class HCompactor {
             log.error("could not load config, error:{} \n exiting ...", e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void setHadoopUserNameKey(AppConfig appConfig){
+        if(System.getenv(HADOOP_USER_NAME_KEY) == null){
+            log.info("No {} specified in Env, setting from config", HADOOP_USER_NAME_KEY);
+            System.setProperty(HADOOP_USER_NAME_KEY, appConfig.getHadoopUserName());
+        }
+        else {
+            log.info("Found {} in ENV, overriding value given in config", HADOOP_USER_NAME_KEY);
+            System.setProperty(HADOOP_USER_NAME_KEY, System.getenv(HADOOP_USER_NAME_KEY));
         }
     }
 }
