@@ -10,6 +10,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +27,11 @@ public class JobSubmitter {
     private CompactionTriggerConfig compactionTriggerConfig;
     private ExecutorService executorService;
     private List<Future> compactors;
+    private String hadoopUserName;
 
+    public void setHadoopUserName(String hadoopUserName) {
+        this.hadoopUserName = hadoopUserName;
+    }
 
     public void init(CompactionTriggerConfig compactionTriggerConfig) throws CompactionRuntimeException {
         this.compactionTriggerConfig = compactionTriggerConfig;
@@ -112,6 +118,7 @@ public class JobSubmitter {
 
     private void preLoadConnections() {
         ConnectionInventory connectionInventory = ConnectionInventory.getInstance();
+        User user = User.create(UserGroupInformation.createRemoteUser(this.hadoopUserName));
         for(CompactionContext compactionContext : compactionTriggerConfig.getCompactionContexts()) {
             try {
                 log.debug("trying to create connection with {}", compactionContext.getClusterID());
@@ -124,7 +131,7 @@ public class JobSubmitter {
                     if(connectionInventory.get(compactionContext.getClusterID()).isClosed()) {
                         log.info("connection is closed, recreating it");
                         connectionInventory.remove(compactionContext.getClusterID());
-                        Connection connection = ConnectionFactory.createConnection(this.getHbaseConfig(compactionContext));
+                        Connection connection = ConnectionFactory.createConnection(this.getHbaseConfig(compactionContext),user);
                         connectionInventory.put(compactionContext.getClusterID(), connection);
                     }
                 }
