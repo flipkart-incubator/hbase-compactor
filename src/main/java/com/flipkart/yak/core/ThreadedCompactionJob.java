@@ -11,7 +11,6 @@ import com.flipkart.yak.interfaces.Submittable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.hadoop.hbase.security.User;
 import org.slf4j.MDC;
 
 /**
@@ -28,12 +27,12 @@ public class ThreadedCompactionJob implements Submittable {
 
 
     @Override
-    public void init(CompactionContext context, User user) throws ConfigurationException {
+    public void init(CompactionContext context) throws ConfigurationException {
        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
        compactionSchedule = context.getCompactionSchedule();
        compactionContext = context;
        compactionExecutable = new RegionByRegionThreadedCompactionJob();
-       compactionExecutable.initResources(compactionContext, user);
+       compactionExecutable.initResources(compactionContext);
        ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
        compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
     }

@@ -11,9 +11,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.RegionInfo;
-import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.hbase.util.Pair;
-import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.util.Map;
@@ -26,7 +24,7 @@ public class RegionByRegionThreadedCompactionJob implements CompactionExecutable
     private CompactionContext compactionContext;
 
     @Override
-    public void initResources(CompactionContext context, User user) throws ConfigurationException {
+    public void initResources(CompactionContext context) throws ConfigurationException {
         try {
             this.connection = ConnectionInventory.getInstance().get(context.getClusterID());
             this.admin = this.connection.getAdmin();

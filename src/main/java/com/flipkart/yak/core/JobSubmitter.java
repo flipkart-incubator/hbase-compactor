@@ -56,8 +56,7 @@ public class JobSubmitter {
         for (CompactionContext compactionContext : this.compactionTriggerConfig.getCompactionContexts()) {
             ThreadedCompactionJob threadedCompactionJob = new ThreadedCompactionJob();
             try {
-                User user = User.create(UserGroupInformation.createRemoteUser(this.hadoopUserName));
-                threadedCompactionJob.init(compactionContext, user);
+                threadedCompactionJob.init(compactionContext);
             } catch (ConfigurationException e) {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
@@ -119,6 +118,7 @@ public class JobSubmitter {
 
     private void preLoadConnections() {
         ConnectionInventory connectionInventory = ConnectionInventory.getInstance();
+        User user = User.create(UserGroupInformation.createRemoteUser(this.hadoopUserName));
         for(CompactionContext compactionContext : compactionTriggerConfig.getCompactionContexts()) {
             try {
                 log.debug("trying to create connection with {}", compactionContext.getClusterID());
@@ -131,7 +131,7 @@ public class JobSubmitter {
                     if(connectionInventory.get(compactionContext.getClusterID()).isClosed()) {
                         log.info("connection is closed, recreating it");
                         connectionInventory.remove(compactionContext.getClusterID());
-                        Connection connection = ConnectionFactory.createConnection(this.getHbaseConfig(compactionContext));
+                        Connection connection = ConnectionFactory.createConnection(this.getHbaseConfig(compactionContext),user);
                         connectionInventory.put(compactionContext.getClusterID(), connection);
                     }
                 }
