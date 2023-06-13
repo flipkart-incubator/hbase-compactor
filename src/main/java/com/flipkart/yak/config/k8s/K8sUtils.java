@@ -28,6 +28,7 @@ public class K8sUtils {
     private static final String PROFILE_CONFIGMAP_NAME = "compaction-trigger-profiles";
     private static final String CONTEXT_CONFIGMAP_NAME = "compaction-trigger-context";
     private static final String APP_NAME_LABEL = "hbase-compactor";
+    private static final String KUBE_TOKEN_ENV_KEY= "KUBE_SECRET_TOKEN";
     private static final Map<String, String> labels = new HashMap<>();
 
     private static final Map<String, String> annotations = new HashMap<>();
@@ -112,7 +113,7 @@ public class K8sUtils {
             log.info("URL: {}", url);
             String token = null;
             try {
-                token = getToken(System.getProperty(Config.ENV_KUBECONFIG));
+                token = getToken();
             } catch (FileNotFoundException e) {
                 log.error("Could not read file: {}", e.getMessage());
                 throw new ConfigurationException(e);
@@ -125,7 +126,12 @@ public class K8sUtils {
         return api;
     }
 
-    private static String getToken(String file) throws FileNotFoundException {
+    private static String getToken() throws FileNotFoundException {
+        String file = System.getProperty(Config.ENV_KUBECONFIG);
+        if(System.getenv(KUBE_TOKEN_ENV_KEY) != null) {
+            log.info("{} is defined in ENV, ignoring {}", KUBE_TOKEN_ENV_KEY, Config.ENV_KUBECONFIG);
+            return System.getenv(KUBE_TOKEN_ENV_KEY);
+        }
         File tokenFile =new File(file);
         if(tokenFile.exists()) {
             try {
