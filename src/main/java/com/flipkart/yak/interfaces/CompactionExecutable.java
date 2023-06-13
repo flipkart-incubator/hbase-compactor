@@ -4,6 +4,7 @@ import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.CompactionRuntimeException;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.hadoop.hbase.security.User;
 import org.apache.yetus.audience.InterfaceAudience;
 
 /**
@@ -17,11 +18,12 @@ import org.apache.yetus.audience.InterfaceAudience;
 public interface CompactionExecutable {
     /**
      * This method is responsible for bootstraping all required connection to the cluster.
-     * Register plugins if need, as in MetricRegistry etc.
+     * Register plugins if needed, as in MetricRegistry etc.
      * @param compactionContext Compaction Task given to thread.
+     * @param user The user with which the HBASE connection to be made.
      * @throws ConfigurationException If bootstrap fails, due to wrong config.
      */
-    void initResources(CompactionContext compactionContext) throws ConfigurationException;
+    void initResources(CompactionContext compactionContext, User user) throws ConfigurationException;
 
     /***
      * Defines how {@link org.apache.hadoop.hbase.client.Admin} will be used to call <b>majorCompactRegion</b>

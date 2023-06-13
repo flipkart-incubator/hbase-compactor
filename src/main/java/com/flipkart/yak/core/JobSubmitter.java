@@ -10,6 +10,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.security.User;
+import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +27,11 @@ public class JobSubmitter {
     private CompactionTriggerConfig compactionTriggerConfig;
     private ExecutorService executorService;
     private List<Future> compactors;
+    private String hadoopUserName;
 
+    public void setHadoopUserName(String hadoopUserName) {
+        this.hadoopUserName = hadoopUserName;
+    }
 
     public void init(CompactionTriggerConfig compactionTriggerConfig) throws CompactionRuntimeException {
         this.compactionTriggerConfig = compactionTriggerConfig;
@@ -50,7 +56,8 @@ public class JobSubmitter {
         for (CompactionContext compactionContext : this.compactionTriggerConfig.getCompactionContexts()) {
             ThreadedCompactionJob threadedCompactionJob = new ThreadedCompactionJob();
             try {
-                threadedCompactionJob.init(compactionContext);
+                User user = User.create(UserGroupInformation.createRemoteUser(this.hadoopUserName));
+                threadedCompactionJob.init(compactionContext, user);
             } catch (ConfigurationException e) {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
