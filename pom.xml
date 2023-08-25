@@ -289,6 +289,7 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>*.xml</exclude>
+                    <exclude>*.yml</exclude>
                 </excludes>
                 <filtering>false</filtering>
             </resource>
