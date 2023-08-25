@@ -6,7 +6,7 @@
 
     <groupId>com.flipkart.hbase</groupId>
     <artifactId>hbase-compactor</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
     <properties>
         <hbase.client.version>2.5.3</hbase.client.version>
         <hadoop.client.version>2.7.7</hadoop.client.version>
@@ -296,6 +296,7 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>*.xml</exclude>
+                    <exclude>*.yml</exclude>
                 </excludes>
                 <filtering>false</filtering>
             </resource>
