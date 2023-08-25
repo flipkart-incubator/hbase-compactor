@@ -18,30 +18,6 @@ store: k8
 logging:
   level: INFO
   appenders:
-    - type: file
-      currentLogFilename: compactor.log
-      threshold: INFO
-      archive: true
-      archivedLogFilenamePattern: compactor-%i.log
-      archivedFileCount: 1
-      maxFileSize: 800MB
-      timeZone: IST
-      queueSize: 1024
-      discardingThreshold: 20
-      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
-      neverBlock: true
-    - type: file
-      currentLogFilename: error.log
-      threshold: ERROR
-      archive: true
-      archivedLogFilenamePattern: error-%i.log
-      archivedFileCount: 1
-      maxFileSize: 200MB
-      timeZone: IST
-      queueSize: 1024
-      discardingThreshold: 20
-      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
-      neverBlock: true
     - type: console
       threshold: ${logger.console.level}
       timeZone: IST
