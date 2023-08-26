@@ -6,7 +6,7 @@
 
     <groupId>com.flipkart.hbase</groupId>
     <artifactId>hbase-compactor</artifactId>
-    <version>3.0.3</version>
+    <version>3.0.4</version>
     <properties>
         <hbase.client.version>2.5.3</hbase.client.version>
         <hadoop.client.version>2.7.7</hadoop.client.version>
@@ -92,6 +92,10 @@
                 <exclusion>
                     <groupId>org.apache.curator</groupId>
                     <artifactId>curator-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -292,6 +296,7 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>*.xml</exclude>
+                    <exclude>*.yml</exclude>
                 </excludes>
                 <filtering>false</filtering>
             </resource>
