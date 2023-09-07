@@ -37,6 +37,15 @@ public class ConfigController {
         return response;
     }
 
+    @DELETE
+    @Path("/context")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean removeContext(CompactionContext compactionContext) {
+        boolean response = abstractConfigWriter.deleteContext(storeResource, compactionContext);
+        return response;
+    }
+
     @POST
     @Path("/profile")
     @Consumes(MediaType.APPLICATION_JSON)
