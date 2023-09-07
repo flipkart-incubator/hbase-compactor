@@ -93,4 +93,28 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
         }
         return false;
     }
+
+    @Override
+    public boolean deleteContext(CoreV1Api coreV1Api, CompactionContext compactionContext) {
+        String fields = K8sUtils.getFieldSelectorForContext();
+        V1ConfigMapList configMapList = null;
+        synchronized (this) {
+            try {
+                configMapList = K8sUtils.execute(fields, coreV1Api);
+                if( configMapList!= null && configMapList.getItems().size()>0) {
+                    V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
+                    Pair<String,String> contextConfigSer = K8sUtils.getSerializedContext(compactionContext);
+                    if(v1ConfigMap.getData() == null) {
+                        v1ConfigMap.setData(new HashMap<>());
+                    }
+                    v1ConfigMap.getData().remove(contextConfigSer.getFirst());
+                    this.patch(v1ConfigMap, coreV1Api, fields);
+                    return true;
+                }
+            } catch (ConfigurationException | ApiException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
 }

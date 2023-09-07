@@ -71,4 +71,27 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
         }
         return false;
     }
+
+    @Override
+    public boolean deleteContext(CuratorFramework zooKeeper, CompactionContext compactionContext) {
+        byte[] data = ZKDataUtil.getSerializedContext(compactionContext);
+        if(data == null) {
+            return false;
+        }
+        log.debug("deleting from zk {}", data);
+        try {
+            String contextPath = ZKDataUtil.getContextPath(compactionContext);
+            Stat checkIfExists = zooKeeper.checkExists().forPath(contextPath);
+            if( checkIfExists == null) {
+                log.info("{} : Context does not exists", contextPath);
+                return true;
+            }
+            zooKeeper.delete().forPath(contextPath);
+            log.info("Deleted version for path {} ", contextPath);
+            return true;
+        } catch (Exception e) {
+            log.error("Could not write to store: {}", e.getMessage());
+        }
+        return false;
+    }
 }
