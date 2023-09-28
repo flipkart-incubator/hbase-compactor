@@ -43,6 +43,8 @@ public class ThreadedCompactionJob implements Submittable {
         MDC.put("JOB", Thread.currentThread().getName());
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
+            MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
+            MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "failure");
             this.compactionManager.checkAndStart();
             /*
             Halt until next schedule

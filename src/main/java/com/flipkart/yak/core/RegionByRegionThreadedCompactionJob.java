@@ -42,9 +42,11 @@ public class RegionByRegionThreadedCompactionJob implements CompactionExecutable
                 log.info("calling major compaction for {}", entry.getKey());
                 this.admin.majorCompactRegion(entry.getValue().getFirst().getEncodedNameAsBytes());
                 MonitorService.reportValue(this.getClass(), this.compactionContext, "success",1);
+                MonitorService.updateHistogram(this.getClass(), this.compactionContext, "currentSuccess",1);
             } catch (IOException e) {
                 log.error("Could not trigger compaction for {}", entry.getKey());
                 MonitorService.reportValue(this.getClass(), this.compactionContext, "failure",1);
+                MonitorService.updateHistogram(this.getClass(), this.compactionContext, "currentFailure",1);
                 throw new CompactionRuntimeException(e);
             }
         }
