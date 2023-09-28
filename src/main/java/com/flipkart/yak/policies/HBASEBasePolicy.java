@@ -5,6 +5,7 @@ import com.flipkart.yak.commons.RegionEligibilityStatus;
 import com.flipkart.yak.commons.Report;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.CompactionRuntimeException;
+import com.flipkart.yak.core.MonitorService;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.hbase.client.Admin;
@@ -32,6 +33,7 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
         try {
             Admin admin = connection.getAdmin();
             List<RegionInfo> allRegionInfoForThis = HBaseUtils.getRegionsAll(context, admin);
+            MonitorService.updateHistogram(this.getClass(), context, "totalRegions", allRegionInfoForThis.size());
             Report tempReport = new Report(this.getClass().getName());
             allRegionInfoForThis.forEach(a -> {
                 tempReport.put(a.getEncodedName(), new Pair<>(a, RegionEligibilityStatus.GREEN));
