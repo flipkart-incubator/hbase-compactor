@@ -47,6 +47,16 @@ public class ConfigController {
     }
 
     @POST
+    @Path("/trigger")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean triggerImmediateCompaction(CompactionContext compactionContext) {
+        compactionContext.setPrompt(true);
+        boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
+        return response;
+    }
+
+    @POST
     @Path("/profile")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

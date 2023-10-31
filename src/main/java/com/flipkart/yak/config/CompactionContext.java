@@ -27,6 +27,8 @@ public class CompactionContext implements Validable {
 
     String rsGroup = "default";
 
+    boolean isPrompt = false;
+
     @NonNull  final String compactionProfileID;
 
     @Override
