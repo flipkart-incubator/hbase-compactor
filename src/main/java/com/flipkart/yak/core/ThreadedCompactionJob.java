@@ -50,11 +50,15 @@ public class ThreadedCompactionJob implements Submittable {
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "failure");
             this.compactionManager.checkAndStart();
+
             /*
             If prompt job , exit from schedule
              */
-            if(compactionSchedule.isPrompt())
+            if(compactionSchedule.isPrompt()) {
+                Thread.currentThread().interrupt();
                 break;
+            }
+
             /*
             Halt until next schedule
              */
