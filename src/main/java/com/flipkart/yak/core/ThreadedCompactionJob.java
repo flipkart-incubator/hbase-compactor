@@ -39,13 +39,22 @@ public class ThreadedCompactionJob implements Submittable {
 
     @Override
     public void run() {
-        Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
+        if(compactionSchedule.isPrompt()) {
+            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+"prompt");
+        } else {
+            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
+        }
         MDC.put("JOB", Thread.currentThread().getName());
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "failure");
             this.compactionManager.checkAndStart();
+            /*
+            If prompt job , exit from schedule
+             */
+            if(compactionSchedule.isPrompt())
+                break;
             /*
             Halt until next schedule
              */
