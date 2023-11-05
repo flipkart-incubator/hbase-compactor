@@ -16,6 +16,7 @@ public class CompactionSchedule {
 
     final float endHourOfTheDay;
 
+    boolean isPrompt = false;
 
     @Override
     public boolean equals(Object o) {

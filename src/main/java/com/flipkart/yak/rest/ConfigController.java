@@ -9,6 +9,7 @@ import org.apache.commons.configuration.ConfigurationException;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -51,7 +52,7 @@ public class ConfigController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public boolean triggerImmediateCompaction(CompactionContext compactionContext) {
-        compactionContext.setPrompt(true);
+        compactionContext.getCompactionSchedule().setPrompt(true);
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
         return response;
     }
