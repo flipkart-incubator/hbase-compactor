@@ -6,9 +6,11 @@ import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import com.flipkart.yak.interfaces.Factory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.lang.time.DateUtils;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -53,6 +55,9 @@ public class ConfigController {
     @Produces(MediaType.APPLICATION_JSON)
     public boolean triggerImmediateCompaction(CompactionContext compactionContext) {
         compactionContext.getCompactionSchedule().setPrompt(true);
+        long lifeCycleStartTime = (long)(Instant.now().toEpochMilli());
+        long lifeCycleEndTime = (long)(compactionContext.getCompactionSchedule().getEndHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
+        compactionContext.getCompactionSchedule().setCompactionScheduleLifeCycle(new CompactionScheduleLifeCycle(lifeCycleStartTime, lifeCycleEndTime));
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
         return response;
     }

@@ -18,6 +18,8 @@ public class CompactionSchedule {
 
     boolean isPrompt = false;
 
+    CompactionScheduleLifeCycle compactionScheduleLifeCycle;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

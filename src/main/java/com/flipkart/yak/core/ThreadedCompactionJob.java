@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.MDC;
 
+import java.time.Instant;
+
 /**
  * A compaction task responsible for executing compaction based on results returned by {@link com.flipkart.yak.interfaces.RegionSelectionPolicy}
  */
@@ -47,12 +49,20 @@ public class ThreadedCompactionJob implements Submittable {
         MDC.put("JOB", Thread.currentThread().getName());
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
+
+             /*
+            If prompt job , and its life cycle has already ended , exit
+             */
+            if(compactionSchedule.isPrompt() && (Instant.now().toEpochMilli() > compactionSchedule.getCompactionScheduleLifeCycle().getEndCycle())) {
+                Thread.currentThread().interrupt();
+                break;
+            }
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "failure");
             this.compactionManager.checkAndStart();
 
             /*
-            If prompt job , exit from schedule
+            If prompt job , exit from schedule after completing compaction
              */
             if(compactionSchedule.isPrompt()) {
                 Thread.currentThread().interrupt();
