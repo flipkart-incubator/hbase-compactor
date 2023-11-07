@@ -227,7 +227,7 @@ public class K8sUtils {
         String key = compactionContext.getClusterID() +compactionContext.getRsGroup() +
                 compactionContext.getNameSpace() + compactionContext.getTableName();
         if (compactionContext.getCompactionSchedule().isPrompt()) {
-            key+=compactionContext.getCompactionSchedule().isPrompt();
+            key+="Prompt";
         }
         String hashCode = Hashing.murmur3_32().hashString(key, StandardCharsets.UTF_8).toString();
         String value = null;

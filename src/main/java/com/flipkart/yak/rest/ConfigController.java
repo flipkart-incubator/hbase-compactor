@@ -62,6 +62,15 @@ public class ConfigController {
         return response;
     }
 
+    @DELETE
+    @Path("/deleteStaleContexts")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public boolean deleteStaleConfig() {
+        boolean response = abstractConfigWriter.deleteStaleContexts(storeResource);
+        return response;
+    }
+
     @POST
     @Path("/profile")
     @Consumes(MediaType.APPLICATION_JSON)
