@@ -14,6 +14,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static com.flipkart.yak.commons.ScheduleUtils.getStartOfTheDay;
+
 /**
  * Controller class for all REST APIs.
  * Takes in {@link Factory} as parameter, and uses to obtain DAOs to store/retrieve data in/from Store.
@@ -56,7 +58,7 @@ public class ConfigController {
     public boolean triggerImmediateCompaction(CompactionContext compactionContext) {
         compactionContext.getCompactionSchedule().setPrompt(true);
         long lifeCycleStartTime = (long)(Instant.now().toEpochMilli());
-        long lifeCycleEndTime = (long)(compactionContext.getCompactionSchedule().getEndHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
+        long lifeCycleEndTime = getStartOfTheDay(Instant.now()) + (long)(compactionContext.getCompactionSchedule().getEndHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
         compactionContext.getCompactionSchedule().setCompactionScheduleLifeCycle(new CompactionScheduleLifeCycle(lifeCycleStartTime, lifeCycleEndTime));
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
         return response;
