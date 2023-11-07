@@ -68,7 +68,7 @@ public class ConfigController {
     @Path("/deleteStaleContexts")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean deleteStaleConfig() {
+    public boolean removeStaleContexts() {
         boolean response = abstractConfigWriter.deleteStaleContexts(storeResource);
         return response;
     }
