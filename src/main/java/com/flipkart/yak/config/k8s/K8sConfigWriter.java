@@ -129,7 +129,7 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
                 if( configMapList!= null && configMapList.getItems().size()>0) {
                     V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
                     v1ConfigMap.getData().forEach((contextKey, contextValue) -> {
-                        if (contextKey.endsWith("prompt")) {
+                        if (contextKey.endsWith("Prompt")) {
                             try {
                                 v1ConfigMap.getData().remove(contextKey);
                                 log.info("Deleted prompt context {}", contextKey);

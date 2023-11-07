@@ -225,7 +225,7 @@ public class K8sUtils {
 
     public static Pair<String, String> getSerializedContext(CompactionContext compactionContext){
         String key = compactionContext.getClusterID() +compactionContext.getRsGroup() +
-                compactionContext.getNameSpace() + compactionContext.getTableName();
+                  compactionContext.getNameSpace() + compactionContext.getTableName();
         if (compactionContext.getCompactionSchedule().isPrompt()) {
             key+="Prompt";
         }
