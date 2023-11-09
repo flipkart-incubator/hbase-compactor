@@ -1,7 +1,7 @@
-namespace: yak-exp-prod
+namespace: yak-exp-preprod
 fcp:
   team: "yak"
-  appId: "prod-yak-compaction"
+  appId: "preprod-yak-exp"
   mail: "yak-dev"
   service: "fk-hbase-compactor"
 
@@ -22,6 +22,7 @@ image:
   yak-compactor:
     registry: jfrog.fkinternal.com
     repository: yak-compactor/fk-hbase-compactor
+#    tag: 2926232
     command: [ "/entrypoint" ]
     args: [ "com.flipkart.yak.HCompactor" ]
     volumes:
@@ -34,13 +35,15 @@ image:
     ports:
       - name: http
         containerPort: 9311
-    maxCpuLimit: 18
-    maxCpuAsk: 18
-    maxMemoryLimit: 26Gi
-    maxMemoryAsk: 26Gi
+    maxCpuLimit: 3
+    maxCpuAsk: 3
+    maxMemoryLimit: 2Gi
+    maxMemoryAsk: 2Gi
     envVarsFrom:
       - from: secret
         name: hadoop-user
+#      - from: secret
+#        name: kubectl-api-user
 
 volumes:
   - name: app
