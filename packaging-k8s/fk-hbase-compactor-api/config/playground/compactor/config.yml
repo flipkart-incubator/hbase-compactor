@@ -1,0 +1,40 @@
+zkConfig :
+  connectionString: "localhost:2181"
+  readOnly:  "true"
+
+k8sConfig:
+  namespace: "yak-core-playground"
+  kubeApiHost: "10.83.49.0"
+  kubeApiPort: "6443"
+  kubeConfigEnvironmentValue: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+  readTimeout: 50000
+  additionalLabels:
+    hbase-compactor/app-id: "playground-yak-core"
+    hbase-compactor/version: "v1"
+  additionalAnnotations:
+    meta.helm.sh/release-name: "yak-hbase-compactor"
+
+store: k8
+
+logging:
+  level: INFO
+  appenders:
+    - type: console
+      threshold: INFO
+      timeZone: IST
+      logFormat: "%-5level [%date] [%thread] [%X{contextId}] [%X{userId}] [%cyan(%logger{0})]: %message%n"
+
+server:
+  rootPath: /api
+  applicationConnectors:
+    - type: http
+      port: 8082
+  adminConnectors:
+    - type: http
+      port: 8083
+  requestLog:
+    appenders:
+      - type: console
+        threshold: INFO
+        timeZone: IST
+        logFormat: "%h %l %u %user %date %r %s %b"

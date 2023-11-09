@@ -1,0 +1,112 @@
+namespace: yak-compaction-prod
+fcp:
+  team: "yak"
+  appId: "prod-yak-compaction"
+  mail: "yak-dev"
+  service: "fk-hbase-compactor-ch2-api"
+
+mtl:
+  cosmos:
+    statsd: disabled
+    tail: disabled
+    config: cosmos
+  asterix: disabled
+
+pod:
+  replicaCount: 1
+
+hostpopulator:
+  state: disabled
+
+services:
+  - name: prod-yak-compactor-ch2
+    type: LoadBalancer
+    selector:
+      app: yak-ui
+    ports:
+      - port: 8082
+        targetPort: 8082
+        protocol: TCP
+        name: http
+    LoadBalancer:
+      vip: prod-yak-compactor-vip-ch2
+      backendService: prod-yak-compactor-vip-ch2
+      frontendPort: 80
+      backendPort: 8082
+      healthCheckPort: 8083
+      healthCheckPath: /healthcheck
+      healthCheckTimeout: 1000ms
+      healthCheckInterval: 5s
+      loadBalancingAlgorithm: leastconn
+      doNotDeleteVip: "true"
+      mode: "http"
+
+image:
+  yak-compactor:
+    registry: jfrog.fkinternal.com
+    repository: yak-compactor/fk-hbase-compactor
+    command: ["/entrypoint"]
+    args: ["com.flipkart.yak.ConfigManager", "server", "/etc/hbase-compactor/config.yml"]
+    volumes:
+      - app
+    livenessCheck:
+      initialDelay: 180
+      checkInterval: 15
+      method: tcp
+      port: 9311
+    ports:
+      - name: http
+        containerPort: 9311
+    maxCpuLimit: 1
+    maxCpuAsk: 1
+    maxMemoryLimit: 2Gi
+    maxMemoryAsk: 2Gi
+    envVarsFrom:
+      - from: secret
+        name: hadoop-user
+
+volumes:
+  - name: app
+    type: configMap
+    value: app-config
+    mountPath: /etc/hbase-compactor/
+
+configMaps:
+  envName: prod-ch2
+  configs:
+    - name: app-config
+      source: dir
+      sourceLoc: compactor
+    - name: cosmos
+      source: dir
+      sourceLoc: cosmos
+    - name: host-populator-config
+      source: dir
+      sourceLoc: host-populator
+
+annotations:
+  sidecar.istio.io/inject: "false"
+
+newrelic:
+  state: disabled
+
+secrets:
+  - name: hadoop-user
+    data:
+      - key: HADOOP_USER_NAME
+        value: eyJkYXRhIjoidmF1bHQ6djE6bUFOS3BHRjVkdE1ib29ITlpGNTZYangyNWJiS0E5YTlsK0ZzV0M3ZEJzL2lMcStnIiwia2V5SWQiOiJ5YWs6OmRlZmF1bHQifQ==
+
+serviceAccount:
+  name: yak-compactor
+  role: Role
+  permissions:
+    - apiGroup: ""
+      resource: configmaps
+      actions:
+        - "get"
+        - "create"
+        - "update"
+        - "delete"
+        - "patch"
+        - "list"
+        - "watch"

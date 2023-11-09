@@ -94,4 +94,9 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
         }
         return false;
     }
+
+    @Override
+    public boolean deleteStaleContexts(CuratorFramework curatorFramework) {
+        return false;
+    }
 }

@@ -1,0 +1,45 @@
+{
+  "servers" : [
+    {
+      "port": "9311",
+      "host": "localhost",
+      "process": "hbase-compactor",
+      "queries": [
+        {
+          "obj": "metrics:name=*",
+          "saperator":".",
+          "typeNameModifiers": [
+            {
+              "typeNameMatcher": "com.flipkart.yak.policies.(\\w+)_(\\w+)_NumRegionInReport",
+              "typeNameGenerator": "com.flipkart.yak.policies.NumRegionInReport",
+              "tags": [
+                { "name": "policy", "valueGenerator": "${1}" },
+                { "name": "tenant", "valueGenerator": "${2}" }
+              ]
+            },
+            {
+              "typeNameMatcher": "com.flipkart.yak.aggregator.(\\w+)_(\\w+)_FinalNumRegion",
+              "typeNameGenerator": "com.flipkart.yak.aggregator.FinalNumRegion",
+              "tags": [
+                { "name": "policy", "valueGenerator": "${1}" },
+                { "name": "tenant", "valueGenerator": "${2}" }
+              ]
+            },
+            {
+              "typeNameMatcher": "com.flipkart.yak.core.RegionByRegionThreadedCompactionJob_(\\w+)_(\\w+)",
+              "typeNameGenerator": "com.flipkart.yak.core.RegionByRegionThreadedCompactionJob",
+              "tags": [
+                { "name": "policy", "valueGenerator": "${2}" },
+                { "name": "tenant", "valueGenerator": "${1}" }
+              ]
+            }
+          ]
+        },
+        {
+          "obj": "java.lang:type=*,name=*",
+          "saperator": "."
+        }
+      ]
+    }
+  ]
+}
