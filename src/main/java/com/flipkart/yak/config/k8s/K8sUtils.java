@@ -17,11 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hbase.util.Pair;
+import org.codehaus.jackson.map.DeserializationConfig;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 @Slf4j
 public class K8sUtils {
@@ -84,6 +87,7 @@ public class K8sUtils {
 
     public static CompactionContext getContext(String rawData) {
         try {
+            serDeserManager.disable(FAIL_ON_UNKNOWN_PROPERTIES);
             return serDeserManager.readValue(rawData, CompactionContext.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

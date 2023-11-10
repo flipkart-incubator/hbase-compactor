@@ -45,7 +45,7 @@ image:
   yak-compactor:
     registry: jfrog.fkinternal.com
     repository: indradhanush/hbase-compactor-test
-    tag: 0.1
+    tag: 0.3
     command: ["/entrypoint"]
     args: ["com.flipkart.yak.ConfigManager", "server", "/etc/hbase-compactor/config.yml"]
     volumes:
