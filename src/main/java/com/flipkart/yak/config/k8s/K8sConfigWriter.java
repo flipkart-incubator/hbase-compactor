@@ -14,8 +14,11 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.security.KeyStore;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
+
+import static com.flipkart.yak.commons.ScheduleUtils.hasLifeCycleEnded;
 
 /**
  * Implementation of {@link AbstractConfigWriter} to write ConfigMaps onto K8s
@@ -129,15 +132,10 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
                 if( configMapList!= null && configMapList.getItems().size()>0) {
                     V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
                     v1ConfigMap.getData().forEach((contextKey, contextValue) -> {
-                        if (contextKey.endsWith("Prompt")) {
-                            try {
-                                v1ConfigMap.getData().remove(contextKey);
-                                log.info("Deleted prompt context {}", contextKey);
-                                this.patch(v1ConfigMap, coreV1Api, fields);
-                            }
-                            catch (ApiException e) {
-                                throw new RuntimeException(e);
-                            }
+                        CompactionContext data = K8sUtils.getContext(contextValue);
+                        if(data.getCompactionSchedule().isPrompt() && hasLifeCycleEnded(data.getCompactionSchedule(), Instant.now())) {
+                            log.info("Deleting context {}",data.toString());
+                            deleteContext(coreV1Api, data);
                         }
                     });
                     return true;

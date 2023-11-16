@@ -42,7 +42,7 @@ public class ThreadedCompactionJob implements Submittable {
     @Override
     public void run() {
         if(compactionSchedule.isPrompt()) {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+"prompt");
+            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+"Prompt");
         } else {
             Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
         }

@@ -16,7 +16,7 @@ public class CompactionSchedule {
 
     final float endHourOfTheDay;
 
-    boolean isPrompt = false;
+    boolean prompt;
 
     CompactionScheduleLifeCycle compactionScheduleLifeCycle;
 

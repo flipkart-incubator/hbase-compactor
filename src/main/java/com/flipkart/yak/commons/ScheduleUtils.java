@@ -62,4 +62,13 @@ public class ScheduleUtils {
         return false;
     }
 
+    public static boolean hasLifeCycleEnded(CompactionSchedule compactionSchedule, Instant instant) {
+        long lifeCycleEndTime = compactionSchedule.getCompactionScheduleLifeCycle().getEndCycle();
+        long currTime = instant.toEpochMilli();
+        if (currTime > lifeCycleEndTime) {
+            return true;
+        }
+        return false;
+    }
+
 }
