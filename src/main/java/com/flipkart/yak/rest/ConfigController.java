@@ -56,14 +56,10 @@ public class ConfigController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public boolean triggerImmediateCompaction(CompactionContext compactionContext) {
-        log.info("launch1");
-        log.info(compactionContext.toString());
         compactionContext.getCompactionSchedule().setPrompt(true);
-        log.info(compactionContext.toString());
         long lifeCycleStartTime = (long)(Instant.now().toEpochMilli());
         long lifeCycleEndTime = getStartOfTheDay(Instant.now()) + (long)(compactionContext.getCompactionSchedule().getEndHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
         compactionContext.getCompactionSchedule().setCompactionScheduleLifeCycle(new CompactionScheduleLifeCycle(lifeCycleStartTime, lifeCycleEndTime));
-        log.info(compactionContext.toString());
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
         return response;
     }
