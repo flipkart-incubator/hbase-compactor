@@ -15,6 +15,8 @@ import org.slf4j.MDC;
 
 import java.time.Instant;
 
+import static com.flipkart.yak.commons.ScheduleUtils.hasLifeCycleEnded;
+
 /**
  * A compaction task responsible for executing compaction based on results returned by {@link com.flipkart.yak.interfaces.RegionSelectionPolicy}
  */
@@ -53,8 +55,9 @@ public class ThreadedCompactionJob implements Submittable {
              /*
             If prompt job , and its life cycle has already ended , exit
              */
-            if(compactionSchedule.isPrompt() && (Instant.now().toEpochMilli() > compactionSchedule.getCompactionScheduleLifeCycle().getEndCycle())) {
+            if(compactionSchedule.isPrompt() && hasLifeCycleEnded(compactionSchedule, Instant.now())) {
                 Thread.currentThread().interrupt();
+                this.compactionExecutable.releaseResources();
                 break;
             }
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
@@ -66,6 +69,7 @@ public class ThreadedCompactionJob implements Submittable {
              */
             if(compactionSchedule.isPrompt()) {
                 Thread.currentThread().interrupt();
+                this.compactionExecutable.releaseResources();
                 break;
             }
 
