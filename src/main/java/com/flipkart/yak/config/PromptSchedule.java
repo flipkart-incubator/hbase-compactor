@@ -9,7 +9,7 @@ import lombok.extern.jackson.Jacksonized;
 @SuperBuilder
 @RequiredArgsConstructor
 @Jacksonized
-public class CompactionScheduleLifeCycle {
-    final long startCycle;
-    final long endCycle;
+public class PromptSchedule {
+    final long startTime;
+    final long endTime;
 }

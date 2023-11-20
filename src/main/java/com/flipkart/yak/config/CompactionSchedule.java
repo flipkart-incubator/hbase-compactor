@@ -1,6 +1,5 @@
 package com.flipkart.yak.config;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.jackson.Jacksonized;
@@ -18,7 +17,7 @@ public class CompactionSchedule {
 
     boolean prompt;
 
-    CompactionScheduleLifeCycle compactionScheduleLifeCycle;
+    PromptSchedule promptSchedule;
 
     @Override
     public boolean equals(Object o) {
