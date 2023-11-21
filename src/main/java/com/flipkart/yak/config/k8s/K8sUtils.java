@@ -17,7 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hbase.util.Pair;
-import org.codehaus.jackson.map.DeserializationConfig;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

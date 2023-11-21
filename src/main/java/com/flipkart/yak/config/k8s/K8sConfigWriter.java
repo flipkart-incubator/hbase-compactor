@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.util.Pair;
 
-import java.security.KeyStore;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;

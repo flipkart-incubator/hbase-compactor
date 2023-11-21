@@ -15,8 +15,6 @@ import org.slf4j.MDC;
 
 import java.time.Instant;
 
-import static com.flipkart.yak.commons.ScheduleUtils.hasExpired;
-
 /**
  * A compaction task responsible for executing compaction based on results returned by {@link com.flipkart.yak.interfaces.RegionSelectionPolicy}
  */

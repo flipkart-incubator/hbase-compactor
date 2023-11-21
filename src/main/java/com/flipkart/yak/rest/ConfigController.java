@@ -8,12 +8,9 @@ import com.flipkart.yak.util.PromptCompactionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 
-import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-
-import static com.flipkart.yak.commons.ScheduleUtils.*;
 
 /**
  * Controller class for all REST APIs.
