@@ -32,9 +32,9 @@ public class ScheduleUtils {
         return Instant.now().toEpochMilli();
     }
 
-    public static long getEndTimeInEpochMilli(float endHour) {
-        long baseTime =  getStartOfTheDay(Instant.now());
-        long endTime = baseTime + (long) (endHour * DateUtils.MILLIS_PER_HOUR);
+    public static long getEndTimeInEpochMilli(float duration) {
+        long baseTime =  getCurrentTimeInEpochMilli();
+        long endTime = baseTime + (long) (duration * DateUtils.MILLIS_PER_HOUR);
         return endTime;
     }
 
@@ -83,9 +83,9 @@ public class ScheduleUtils {
         return false;
     }
 
-    public static boolean hasLifeCycleEnded(CompactionSchedule compactionSchedule, Instant instant) {
+    public static boolean hasExpired(CompactionSchedule compactionSchedule, Instant instant) {
         long lifeCycleEndTime = compactionSchedule.getPromptSchedule().getEndTime();
-        long currTime = instant.toEpochMilli();
+        long currTime = getCurrentTimeInEpochMilli();
         if (currTime > lifeCycleEndTime) {
             return true;
         }

@@ -15,7 +15,7 @@ import org.slf4j.MDC;
 
 import java.time.Instant;
 
-import static com.flipkart.yak.commons.ScheduleUtils.hasLifeCycleEnded;
+import static com.flipkart.yak.commons.ScheduleUtils.hasExpired;
 
 /**
  * A compaction task responsible for executing compaction based on results returned by {@link com.flipkart.yak.interfaces.RegionSelectionPolicy}
@@ -55,7 +55,7 @@ public class ThreadedCompactionJob implements Submittable {
              /*
             If prompt job , and its life cycle has already ended , exit
              */
-            if(compactionSchedule.isPrompt() && hasLifeCycleEnded(compactionSchedule, Instant.now())) {
+            if(compactionSchedule.isPrompt() && ScheduleUtils.hasExpired(compactionSchedule, Instant.now())) {
                 Thread.currentThread().interrupt();
                 this.compactionExecutable.releaseResources();
                 break;
@@ -74,7 +74,7 @@ public class ThreadedCompactionJob implements Submittable {
             }
 
             /*
-            Halt until next schedule
+            If not prompt , Halt until next schedule
              */
             long sleepFor = ScheduleUtils.getSleepTime(compactionSchedule);
             log.info("sleeping for {}", sleepFor);

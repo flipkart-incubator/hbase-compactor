@@ -19,7 +19,8 @@ import org.apache.hadoop.util.Time;
 import java.time.Instant;
 import java.util.Set;
 
-import static com.flipkart.yak.commons.ScheduleUtils.hasLifeCycleEnded;
+import static com.flipkart.yak.commons.ScheduleUtils.hasExpired;
+
 
 @Slf4j
 @Getter
@@ -42,10 +43,7 @@ public class CompactionManager {
     }
 
     public final void checkAndStart() {
-        while (!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) {
-            if(compactionSchedule.isPrompt() && hasLifeCycleEnded(compactionSchedule, Instant.now())) {
-                break;
-            }
+        while ((!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) || (compactionSchedule.isPrompt() && !hasExpired(compactionSchedule, Instant.now()))){
             try {
                 Report report = this.aggregateReport();
                 this.compactionExecutable.doCompact(report);

@@ -18,7 +18,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
 
-import static com.flipkart.yak.commons.ScheduleUtils.hasLifeCycleEnded;
+import static com.flipkart.yak.commons.ScheduleUtils.hasExpired;
+
 
 /**
  * Implementation of {@link AbstractConfigWriter} to write ConfigMaps onto K8s
@@ -133,7 +134,7 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
                     V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
                     v1ConfigMap.getData().forEach((contextKey, contextValue) -> {
                         CompactionContext data = K8sUtils.getContext(contextValue);
-                        if(data.getCompactionSchedule().isPrompt() && hasLifeCycleEnded(data.getCompactionSchedule(), Instant.now())) {
+                        if(data.getCompactionSchedule().isPrompt() && hasExpired(data.getCompactionSchedule(), Instant.now())) {
                             log.info("Deleting context {}",data.toString());
                             deleteContext(coreV1Api, data);
                         }
