@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
 
-
 /**
  * Implementation of {@link AbstractConfigWriter} to write ConfigMaps onto K8s
  */
