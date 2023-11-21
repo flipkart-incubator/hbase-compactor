@@ -50,7 +50,7 @@ public class ThreadedCompactionJob implements Submittable {
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
 
-             /*
+            /*
             If prompt job , and its life cycle has already ended , exit
              */
             if(compactionSchedule.isPrompt() && ScheduleUtils.hasExpired(compactionSchedule, Instant.now())) {
@@ -72,7 +72,7 @@ public class ThreadedCompactionJob implements Submittable {
             }
 
             /*
-            If not prompt , Halt until next schedule
+            If scheduled job , Halt until next schedule
              */
             long sleepFor = ScheduleUtils.getSleepTime(compactionSchedule);
             log.info("sleeping for {}", sleepFor);

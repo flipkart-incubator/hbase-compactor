@@ -41,6 +41,9 @@ public class CompactionManager {
     }
 
     public final void checkAndStart() {
+        /*
+        If Scheduled Job , check if duration lies within schedule or If Prompt Job check if it has not expired yet
+         */
         while ((!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) || (compactionSchedule.isPrompt() && !ScheduleUtils.hasExpired(compactionSchedule, Instant.now()))){
             try {
                 Report report = this.aggregateReport();

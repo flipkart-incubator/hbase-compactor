@@ -1,13 +1,19 @@
 package com.flipkart.yak.config.zkstore;
 
+import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionProfileConfig;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Slf4j
@@ -96,7 +102,27 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
     }
 
     @Override
-    public boolean deleteStaleContexts(CuratorFramework curatorFramework) {
-        return false;
+    public boolean deleteStaleContexts(CuratorFramework zooKeeper) throws ConfigurationException {
+        List<String> contextsData = new ArrayList<>();
+        try {
+            contextsData = zooKeeper.getChildren().forPath(ZKDataUtil.getContextBasePath());
+            contextsData.forEach( path -> {
+                try {
+                    byte[] data =  zooKeeper.getData().forPath(ZKPaths.makePath(ZKDataUtil.getContextBasePath(),path));
+                    CompactionContext compactionContext = ZKDataUtil.getContextFromSerializedConfig(data);
+                    if(compactionContext.getCompactionSchedule().isPrompt() && ScheduleUtils.hasExpired(compactionContext.getCompactionSchedule(), Instant.now())) {
+                        log.info("Deleting context {}",compactionContext.toString());
+                        deleteContext(zooKeeper, compactionContext);
+                    }
+                } catch (Exception  e) {
+                    log.error("could not get data from zookeeper path {}: {}", path, e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            });
+            return true;
+        } catch (Exception e) {
+            log.error("Could not load zookeeper data: {}", e.getMessage());
+            throw new ConfigurationException(e);
+        }
     }
 }
