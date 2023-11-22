@@ -26,6 +26,7 @@ public class PromptCompactionRequest implements Validable {
     
     @Override
     public void validate() throws ConfigurationException {
+
         CompactionContext.validateTable(tableName, nameSpace, rsGroup);
         if (duration == 0) {
             throw new ConfigurationException("duration cannot be null");
