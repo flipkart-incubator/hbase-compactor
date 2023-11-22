@@ -6,7 +6,7 @@
 
     <groupId>com.flipkart.hbase</groupId>
     <artifactId>hbase-compactor</artifactId>
-    <version>3.1.3</version>
+    <version>3.1.1</version>
     <properties>
         <hbase.client.version>2.5.3</hbase.client.version>
         <hadoop.client.version>2.7.7</hadoop.client.version>
@@ -20,18 +20,18 @@
     </properties>
 
     <distributionManagement>
-        <repository>
-            <id>clojars</id>
-            <name>Clojars repository</name>
-            <url>https://clojars.org/repo</url>
-        </repository>
+         <repository>
+                  <id>clojars</id>
+                  <name>Clojars repository</name>
+                  <url>https://clojars.org/repo</url>
+         </repository>
     </distributionManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/flipkart-incubator/hbase-compactor.git</connection>
-        <developerConnection>scm:git:https://github.com/flipkart-incubator/hbase-compactor.git</developerConnection>
-        <url>https://github.com/flipkart-incubator/hbase-compactor</url>
-        <tag>HEAD</tag>
+         <connection>scm:git:https://github.com/flipkart-incubator/hbase-compactor.git</connection>
+         <developerConnection>scm:git:https://github.com/flipkart-incubator/hbase-compactor.git</developerConnection>
+         <url>https://github.com/flipkart-incubator/hbase-compactor</url>
+         <tag>HEAD</tag>
     </scm>
 
     <dependencies>
@@ -297,15 +297,15 @@
     </build>
 
     <repositories>
-        <repository>
-            <id>clojars</id>
-            <name>Clojars Maven Repository</name>
-            <url>http://clojars.org/repo/</url>
-        </repository>
-        <repository>
-            <id>maven-central</id>
-            <name>Maven Central Repo</name>
-            <url>http://repo1.maven.org/maven2/</url>
-        </repository>
-    </repositories>
+		<repository>
+			<id>clojars</id>
+			<name>Clojars Maven Repository</name>
+			<url>http://clojars.org/repo/</url>
+		</repository>
+		<repository>
+			<id>maven-central</id>
+			<name>Maven Central Repo</name>
+			<url>http://repo1.maven.org/maven2/</url>
+		</repository>
+	</repositories>
 </project>
