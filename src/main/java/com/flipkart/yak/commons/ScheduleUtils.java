@@ -84,8 +84,8 @@ public class ScheduleUtils {
     }
 
     public static boolean hasExpired(CompactionSchedule compactionSchedule, Instant instant) {
-        long lifeCycleEndTime = compactionSchedule.getPromptSchedule().getEndTime();
-        long currTime = getCurrentTimeInEpochMilli();
+        long lifeCycleEndTime = compactionSchedule.getPromptCompactionLifespan().getEndSpan();
+        long currTime = instant.now().toEpochMilli();
         if (currTime > lifeCycleEndTime) {
             return true;
         }

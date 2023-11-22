@@ -17,7 +17,7 @@ public class CompactionSchedule {
 
     boolean prompt;
 
-    PromptSchedule promptSchedule;
+    PromptCompactionLifeSpan promptCompactionLifespan;
 
     @Override
     public boolean equals(Object o) {

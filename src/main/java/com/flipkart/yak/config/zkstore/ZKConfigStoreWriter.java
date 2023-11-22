@@ -102,7 +102,7 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
     }
 
     @Override
-    public boolean deleteStaleContexts(CuratorFramework zooKeeper) throws ConfigurationException {
+    public boolean deleteAllStaleContexts(CuratorFramework zooKeeper) {
         List<String> contextsData = new ArrayList<>();
         try {
             contextsData = zooKeeper.getChildren().forPath(ZKDataUtil.getContextBasePath());
@@ -122,7 +122,7 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
             return true;
         } catch (Exception e) {
             log.error("Could not load zookeeper data: {}", e.getMessage());
-            throw new ConfigurationException(e);
+            throw new RuntimeException(e);
         }
     }
 }

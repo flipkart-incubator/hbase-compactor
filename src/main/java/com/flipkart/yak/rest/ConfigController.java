@@ -4,7 +4,7 @@ import com.flipkart.yak.config.*;
 import com.flipkart.yak.config.loader.AbstractConfigLoader;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
 import com.flipkart.yak.interfaces.Factory;
-import com.flipkart.yak.util.PromptCompactionUtil;
+import com.flipkart.yak.commons.CompactionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 
@@ -52,17 +52,17 @@ public class ConfigController {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public boolean triggerImmediateCompaction(PromptCompactionRequest promptCompactionRequest) {
-        CompactionContext compactionContext = PromptCompactionUtil.getCompactionContext(promptCompactionRequest);
+        CompactionContext compactionContext = CompactionUtils.getCompactionContext(promptCompactionRequest);
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
         return response;
     }
 
     @DELETE
-    @Path("/deleteStaleContexts")
+    @Path("/deleteAllStaleContexts")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean removeStaleContexts() throws ConfigurationException {
-        boolean response = abstractConfigWriter.deleteStaleContexts(storeResource);
+    public boolean removeStaleContexts() {
+        boolean response = abstractConfigWriter.deleteAllStaleContexts(storeResource);
         return response;
     }
 

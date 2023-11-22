@@ -40,24 +40,20 @@ public class ThreadedCompactionJob implements Submittable {
     }
 
     @Override
-    public void run() {
+    public void setThreadName(CompactionContext compactionContext, CompactionSchedule compactionSchedule) {
         if(compactionSchedule.isPrompt()) {
             Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+"Prompt");
         } else {
             Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
         }
+    }
+
+    @Override
+    public void run() {
+        setThreadName(compactionContext, compactionSchedule);
         MDC.put("JOB", Thread.currentThread().getName());
         log.info("starting compact-cron for : {}", this.getCompactionContext());
         while(true) {
-
-            /*
-            If prompt job , and its life cycle has already ended , exit
-             */
-            if(compactionSchedule.isPrompt() && ScheduleUtils.hasExpired(compactionSchedule, Instant.now())) {
-                Thread.currentThread().interrupt();
-                this.compactionExecutable.releaseResources();
-                break;
-            }
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "success");
             MonitorService.resetMeterValue(compactionExecutable.getClass(), compactionContext, "failure");
             this.compactionManager.checkAndStart();
@@ -66,8 +62,6 @@ public class ThreadedCompactionJob implements Submittable {
             If prompt job , exit from schedule after completing compaction
              */
             if(compactionSchedule.isPrompt()) {
-                Thread.currentThread().interrupt();
-                this.compactionExecutable.releaseResources();
                 break;
             }
 

@@ -121,7 +121,7 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
     }
 
     @Override
-    public boolean deleteStaleContexts(CoreV1Api coreV1Api) {
+    public boolean deleteAllStaleContexts(CoreV1Api coreV1Api) {
         String fields = K8sUtils.getFieldSelectorForContext();
         V1ConfigMapList configMapList = null;
         synchronized (this) {
