@@ -62,20 +62,18 @@ mvn clean package
 
 It provides details about APIs that hbase compactor currently supports and their usage
 
-**Base URL**
+### Base URL 
 
 {{COMPACTOR_URL}}/api/manage
 
-**Endpoints**
+### Endpoints
 
-1. Fetch all compaction contexts
+**1. Fetch all compaction contexts**
 
-*Endpoint* : /contexts 
-*Method* : GET
-*Parameters:*
-
-Example Response:
-
+* Endpoint : /contexts 
+* Method : GET
+* Example Response:
+```
     {
         "clusterID": "preprod-hbase-cluster-endpoint:2181",
         "compactionSchedule": {
@@ -89,14 +87,14 @@ Example Response:
         "rsGroup": "default",
         "compactionProfileID": "default"
     }
-    
-2. Fetch all compaction profiles
+```    
 
-*Endpoint* : /profiles 
-*Method* : GET
+**2. Fetch all compaction profiles**
 
-Example Response:
-
+* Endpoint : /profiles 
+* Method : GET
+* Example Response:
+```
     {
         "policies": [
             {
@@ -128,11 +126,13 @@ Example Response:
         },
         "id": "default"
     }
+```
 
-3. Add Compaction Context
+**3. Add Compaction Context**
 
-*Endpoint* : /context
-*Method* : POST
+* Endpoint : /context
+* Method : POST
+```
 Example Payload Request:
     {
        "clusterID": "preprod-hbase-cluster-endpoint:2181",
@@ -145,13 +145,14 @@ Example Payload Request:
        "rsGroup": "default",
        "compactionProfileID": "default"
     }
+```
 
-4. Add Compaction Profile
+**4. Add Compaction Profile**
 
-*Endpoint* : /profile
-*Method* : POST
-Example Payload Request:
-
+* Endpoint : /profile
+* Method : POST
+* Example Payload Request:
+```
     {
        "policies": [
             {
@@ -179,12 +180,14 @@ Example Payload Request:
         },
         "id": "default"
     }
+```
 
-5. Delete Compaction Context
+**5. Delete Compaction Context**
 
-*Endpoint* : /context
-*Method* : DELETE
-Example Payload Request:
+* Endpoint : /context
+* Method : DELETE
+* Example Payload Request:
+```
     {
        "clusterID": "preprod-hbase-cluster-endpoint:2181",
        "compactionSchedule": {
@@ -196,11 +199,13 @@ Example Payload Request:
        "rsGroup": "default",
        "compactionProfileID": "default"
     }
-    
-6. Trigger Immediate(prompt) Compaction on Demand
+```
 
-*Endpoint* : /trigger
-*Method* : POST
+**6. Trigger Immediate(prompt) Compaction on Demand**
+
+* Endpoint : /trigger
+* Method : POST
+```
 Example Payload Request:
     {
        "clusterID": "preprod-hbase-cluster-endpoint:2181:2181",
@@ -210,11 +215,13 @@ Example Payload Request:
        "rsGroup": "default",
        "compactionProfileID": "default"
     }    
+```
 
-6. Delete all stale compaction Contexts
+**7. Delete all stale compaction Contexts**
 It deletes all stale compaction contexts that were promptly triggered and have been completed and their lifsespan has been ended.
-*Endpoint* : /deleteAllStaleContexts
-*Method* : DELETE
+
+* Endpoint : /deleteAllStaleContexts
+* Method : DELETE
        
 
 
