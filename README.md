@@ -57,8 +57,8 @@ mvn clean package
 ```
 
 ## Hbase Compactor API Details
-```
-**Overview**
+
+### Overview
 
 It provides details about APIs that hbase compactor currently supports and their usage
 
@@ -216,7 +216,7 @@ It deletes all stale compaction contexts that were promptly triggered and have b
 *Endpoint* : /deleteAllStaleContexts
 *Method* : DELETE
        
-```
+
 
 
 
