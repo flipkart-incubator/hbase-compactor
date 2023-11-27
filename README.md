@@ -56,7 +56,7 @@ mvn clean package
 </configuration>
 ```
 
-## Hbase Compactor API Details
+## API Details
 
 ### Overview
 
@@ -132,8 +132,8 @@ It provides details about APIs that hbase compactor currently supports and their
 
 * Endpoint : /context
 * Method : POST
+* Example Payload Request :
 ```
-Example Payload Request:
     {
        "clusterID": "preprod-hbase-cluster-endpoint:2181",
        "compactionSchedule": {
