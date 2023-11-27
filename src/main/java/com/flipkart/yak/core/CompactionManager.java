@@ -16,7 +16,9 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.util.Time;
 
+import java.time.Instant;
 import java.util.Set;
+
 
 @Slf4j
 @Getter
@@ -39,7 +41,10 @@ public class CompactionManager {
     }
 
     public final void checkAndStart() {
-        while (!ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) {
+        /*
+        If Scheduled Job , check if duration lies within schedule or If Prompt Job check if it has not expired yet
+         */
+        while ((!compactionSchedule.isPrompt() && !ScheduleUtils.hasTimedOut(compactionSchedule) && ScheduleUtils.canStart(compactionSchedule)) || (compactionSchedule.isPrompt() && !ScheduleUtils.hasTimedOut(compactionSchedule.getPromptCompactionLifespan(), Instant.now()))){
             try {
                 Report report = this.aggregateReport();
                 this.compactionExecutable.doCompact(report);

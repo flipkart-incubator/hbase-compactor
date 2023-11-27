@@ -1,10 +1,12 @@
 package com.flipkart.yak.commons;
 
 import com.flipkart.yak.config.CompactionSchedule;
+import com.flipkart.yak.config.PromptCompactionLifeSpan;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.time.DateUtils;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -15,6 +17,26 @@ public class ScheduleUtils {
         Calendar calendar = DateUtils.toCalendar(Date.from(instant));
         Calendar todaysDate = DateUtils.truncate(calendar, Calendar.DATE);
         return todaysDate.getTimeInMillis();
+    }
+
+    public static float getCurrentHour() {
+        return LocalTime.now().getHour();
+    }
+
+    public static float getEndHour(float duration) {
+        float currentHour = getCurrentHour();
+        float endHour = currentHour + duration;
+        return endHour;
+    }
+
+    public static long getCurrentTimeInEpochMilli() {
+        return Instant.now().toEpochMilli();
+    }
+
+    public static long getEndTimeInEpochMilli(float duration) {
+        long baseTime =  getCurrentTimeInEpochMilli();
+        long endTime = baseTime + (long) (duration * DateUtils.MILLIS_PER_HOUR);
+        return endTime;
     }
 
     public static long getSleepTime(CompactionSchedule compactionSchedule) {
@@ -46,6 +68,15 @@ public class ScheduleUtils {
             return false;
         }
         return true;
+    }
+
+    public static boolean hasTimedOut(PromptCompactionLifeSpan promptCompactionLifeSpan, Instant instant) {
+        long lifeCycleEndTime = promptCompactionLifeSpan.getEndSpan();
+        long currTime = instant.now().toEpochMilli();
+        if (currTime > lifeCycleEndTime) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean canStart(CompactionSchedule compactionSchedule) {

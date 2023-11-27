@@ -55,7 +55,7 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
             Map<String, List<String>> regionFNMapping = new WeakHashMap<>();
             HBaseUtils.refreshRegionToNodeMapping(admin, allEncodedRegionName, regionFNMapping);
             List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions, connection);
-            return this.prepareReport(report.entrySet().stream().map(e -> e.getValue().getFirst()).collect(Collectors.toList()), eligibleRegions);
+            return this.prepareReport(allRegions, eligibleRegions);
         }catch (IOException e) {
             log.error("Exception while getting eligibility report {}", e.getMessage());
             throw new CompactionRuntimeException(e);
@@ -67,7 +67,7 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
         Set<String> compactingRegions = new HashSet<>();
         for (String region : regions) {
             CompactionState compactionState = admin.getCompactionStateForRegion(Bytes.toBytes(region));
-            log.debug("Compaction state: " + region + " - " + compactionState);
+            log.trace("Compaction state: " + region + " - " + compactionState);
             if (compactionState.equals(CompactionState.MAJOR) || compactionState
                     .equals(CompactionState.MAJOR_AND_MINOR)) {
                 log.debug("In Progress compaction for: " + region);
@@ -80,12 +80,9 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
 
     private Report prepareReport(List<RegionInfo> allRegionInfo, List<String> eligibleRegions) {
         Report finalReport = new Report(this.getClass().getName());
-        Set<String> setOfRegionKeys = new HashSet<>(eligibleRegions);
-        allRegionInfo.forEach(region -> {
-            if (setOfRegionKeys.contains(region.getEncodedName())) {
-                finalReport.put(region.getEncodedName(), new Pair<>(region, RegionEligibilityStatus.GREEN));
-            }
-        });
+        Map<String, RegionInfo> tempStore = new WeakHashMap<>();
+        allRegionInfo.forEach(R -> tempStore.put(R.getEncodedName(), R));
+        eligibleRegions.forEach(region -> finalReport.put(region, new Pair<>(tempStore.get(region), RegionEligibilityStatus.GREEN)));
         log.info("{} regions present in final report prepared by {}", finalReport.size(), this.getClass().getName());
         return finalReport;
     }
