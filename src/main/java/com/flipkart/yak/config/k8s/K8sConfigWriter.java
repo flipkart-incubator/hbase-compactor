@@ -1,5 +1,6 @@
 package com.flipkart.yak.config.k8s;
 
+import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionProfileConfig;
 import com.flipkart.yak.config.loader.AbstractConfigWriter;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.hbase.util.Pair;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -112,6 +114,31 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
                     return true;
                 }
             } catch (ConfigurationException | ApiException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean deleteAllStaleContexts(CoreV1Api coreV1Api) {
+        String fields = K8sUtils.getFieldSelectorForContext();
+        V1ConfigMapList configMapList = null;
+        synchronized (this) {
+            try {
+                configMapList = K8sUtils.execute(fields, coreV1Api);
+                if( configMapList!= null && configMapList.getItems().size()>0) {
+                    V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
+                    v1ConfigMap.getData().forEach((contextKey, contextValue) -> {
+                        CompactionContext data = K8sUtils.getContext(contextValue);
+                        if(data.getCompactionSchedule().isPrompt() && ScheduleUtils.hasTimedOut(data.getCompactionSchedule().getPromptCompactionLifespan(), Instant.now())) {
+                            log.info("Deleting context {}",data.toString());
+                            deleteContext(coreV1Api, data);
+                        }
+                    });
+                    return true;
+                }
+            } catch (ConfigurationException e) {
                 throw new RuntimeException(e);
             }
         }

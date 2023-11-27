@@ -11,5 +11,6 @@ public abstract class AbstractConfigWriter <Resource> {
     public abstract boolean storeProfile(Resource resource, CompactionProfileConfig compactionProfileConfig);
     public abstract boolean storeContext(Resource resource, CompactionContext compactionContext);
     public abstract boolean deleteContext(Resource resource, CompactionContext compactionContext);
+    public abstract boolean deleteAllStaleContexts(Resource resource);
 
 }

@@ -56,10 +56,14 @@ public class CompactionContext implements Validable {
 
     @Override
     public void validate() throws ConfigurationException {
-        if (tableName==null && nameSpace == null && rsGroup == null) {
+        validateTable(tableName, nameSpace, rsGroup);
+    }
+
+    static void validateTable(String tableName, String nameSpace, String rsGroup) throws ConfigurationException {
+        if (tableName == null && nameSpace == null && rsGroup == null) {
             throw new ConfigurationException("no target for compaction specified");
         }
-        if (tableName!= null && tableName.contains(":")) {
+        if (tableName != null && tableName.contains(":")) {
             String namespace = tableName.split(":")[0];
             if (namespace.equals("hbase")) {
                 throw new ConfigurationException("hbase tables should not be compacted with custom trigger");
