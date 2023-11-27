@@ -131,7 +131,7 @@ public class K8sConfigWriter extends AbstractConfigWriter<CoreV1Api> {
                     V1ConfigMap v1ConfigMap = configMapList.getItems().get(0);
                     v1ConfigMap.getData().forEach((contextKey, contextValue) -> {
                         CompactionContext data = K8sUtils.getContext(contextValue);
-                        if(data.getCompactionSchedule().isPrompt() && ScheduleUtils.hasExpired(data.getCompactionSchedule(), Instant.now())) {
+                        if(data.getCompactionSchedule().isPrompt() && ScheduleUtils.hasTimedOut(data.getCompactionSchedule().getPromptCompactionLifespan(), Instant.now())) {
                             log.info("Deleting context {}",data.toString());
                             deleteContext(coreV1Api, data);
                         }

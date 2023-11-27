@@ -31,6 +31,8 @@ public class K8sUtils {
     private static final String CONTEXT_CONFIGMAP_NAME = "compaction-trigger-context";
     private static final String APP_NAME_LABEL = "hbase-compactor";
     private static final String KUBE_TOKEN_ENV_KEY= "KUBE_SECRET_TOKEN";
+
+    public static final String PROMPT_LABEL   = "Prompt";
     private static final Map<String, String> labels = new HashMap<>();
 
     private static final Map<String, String> annotations = new HashMap<>();
@@ -230,7 +232,7 @@ public class K8sUtils {
         String key = compactionContext.getClusterID() +compactionContext.getRsGroup() +
                   compactionContext.getNameSpace() + compactionContext.getTableName();
         if (compactionContext.getCompactionSchedule().isPrompt()) {
-            key+="Prompt";
+            key += PROMPT_LABEL;
         }
         String hashCode = Hashing.murmur3_32().hashString(key, StandardCharsets.UTF_8).toString();
         String value = null;

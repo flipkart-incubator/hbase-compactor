@@ -1,6 +1,7 @@
 package com.flipkart.yak.commons;
 
 import com.flipkart.yak.config.CompactionSchedule;
+import com.flipkart.yak.config.PromptCompactionLifeSpan;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.time.DateUtils;
 
@@ -69,6 +70,15 @@ public class ScheduleUtils {
         return true;
     }
 
+    public static boolean hasTimedOut(PromptCompactionLifeSpan promptCompactionLifeSpan, Instant instant) {
+        long lifeCycleEndTime = promptCompactionLifeSpan.getEndSpan();
+        long currTime = instant.now().toEpochMilli();
+        if (currTime > lifeCycleEndTime) {
+            return true;
+        }
+        return false;
+    }
+
     public static boolean canStart(CompactionSchedule compactionSchedule) {
         return canStart(compactionSchedule, Instant.now());
     }
@@ -78,15 +88,6 @@ public class ScheduleUtils {
         long currTime = instant.toEpochMilli();
         long startTime = baseTime + (long)(compactionSchedule.getStartHourOfTheDay() * DateUtils.MILLIS_PER_HOUR);
         if (currTime >= startTime) {
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean hasExpired(CompactionSchedule compactionSchedule, Instant instant) {
-        long lifeCycleEndTime = compactionSchedule.getPromptCompactionLifespan().getEndSpan();
-        long currTime = instant.now().toEpochMilli();
-        if (currTime > lifeCycleEndTime) {
             return true;
         }
         return false;

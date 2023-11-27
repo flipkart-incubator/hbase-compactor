@@ -110,7 +110,7 @@ public class ZKConfigStoreWriter extends AbstractConfigWriter<CuratorFramework> 
                 try {
                     byte[] data =  zooKeeper.getData().forPath(ZKPaths.makePath(ZKDataUtil.getContextBasePath(),path));
                     CompactionContext compactionContext = ZKDataUtil.getContextFromSerializedConfig(data);
-                    if(compactionContext.getCompactionSchedule().isPrompt() && ScheduleUtils.hasExpired(compactionContext.getCompactionSchedule(), Instant.now())) {
+                    if(compactionContext.getCompactionSchedule().isPrompt() && ScheduleUtils.hasTimedOut(compactionContext.getCompactionSchedule().getPromptCompactionLifespan(), Instant.now())) {
                         log.info("Deleting context {}",compactionContext.toString());
                         deleteContext(zooKeeper, compactionContext);
                     }

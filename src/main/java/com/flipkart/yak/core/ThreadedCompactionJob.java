@@ -5,6 +5,7 @@ import com.flipkart.yak.commons.ProfileInventoryFactory;
 import com.flipkart.yak.commons.ScheduleUtils;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.config.CompactionSchedule;
+import com.flipkart.yak.config.k8s.K8sUtils;
 import com.flipkart.yak.interfaces.CompactionExecutable;
 import com.flipkart.yak.interfaces.ProfileInventory;
 import com.flipkart.yak.interfaces.Submittable;
@@ -42,7 +43,7 @@ public class ThreadedCompactionJob implements Submittable {
     @Override
     public void setThreadName(CompactionContext compactionContext, CompactionSchedule compactionSchedule) {
         if(compactionSchedule.isPrompt()) {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+"Prompt");
+            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+ K8sUtils.PROMPT_LABEL);
         } else {
             Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
         }
