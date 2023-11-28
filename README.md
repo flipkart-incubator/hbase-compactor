@@ -68,7 +68,7 @@ It provides details about APIs that hbase compactor currently supports and their
 
 ### Endpoints
 
-**1. Fetch all compaction contexts**
+**1. Fetch all contexts**
 
 * Endpoint : /contexts 
 * Method : GET
@@ -89,7 +89,7 @@ It provides details about APIs that hbase compactor currently supports and their
     }
 ```    
 
-**2. Fetch all compaction profiles**
+**2. Fetch all profiles**
 
 * Endpoint : /profiles 
 * Method : GET
@@ -128,7 +128,7 @@ It provides details about APIs that hbase compactor currently supports and their
     }
 ```
 
-**3. Add Compaction Context**
+**3. Add Context**
 
 * Endpoint : /context
 * Method : POST
@@ -147,7 +147,7 @@ It provides details about APIs that hbase compactor currently supports and their
     }
 ```
 
-**4. Add Compaction Profile**
+**4. Add Profile**
 
 * Endpoint : /profile
 * Method : POST
@@ -182,7 +182,7 @@ It provides details about APIs that hbase compactor currently supports and their
     }
 ```
 
-**5. Delete Compaction Context**
+**5. Delete Context**
 
 * Endpoint : /context
 * Method : DELETE
@@ -201,7 +201,7 @@ It provides details about APIs that hbase compactor currently supports and their
     }
 ```
 
-**6. Trigger Immediate(prompt) Compaction on Demand**
+**6. Trigger Immediate Compaction on Demand**
 
 * Endpoint : /trigger
 * Method : POST
@@ -217,13 +217,10 @@ Example Payload Request:
     }    
 ```
 
-**7. Delete all stale compaction Contexts**
+**7. Delete all stale Contexts**
+
 It deletes all stale compaction contexts that were promptly triggered and have been completed and their lifsespan has been ended.
 
 * Endpoint : /deleteAllStaleContexts
 * Method : DELETE
        
-
-
-
-
