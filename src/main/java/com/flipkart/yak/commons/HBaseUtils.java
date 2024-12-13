@@ -13,8 +13,13 @@ import java.util.*;
 public class HBaseUtils {
 
     public static List<RegionInfo> getRegionsAll(CompactionContext context, Admin admin) throws IOException {
-        TableName tableName= TableName.valueOf(context.getNameSpace()+":"+context.getTableName());
-        return admin.getRegions(tableName);
+        List<RegionInfo> allRegions = new ArrayList<>();
+        String[] tables = context.getTableName().split(",");
+        for (String table : tables) {
+            TableName tableName = TableName.valueOf(context.getNameSpace() + ":" + table.trim());
+            allRegions.addAll(admin.getRegions(tableName));
+        }
+        return allRegions;
     }
 
 
