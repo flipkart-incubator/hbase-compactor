@@ -14,7 +14,23 @@ public class HBaseUtils {
 
     public static List<RegionInfo> getRegionsAll(CompactionContext context, Admin admin) throws IOException {
         List<RegionInfo> allRegions = new ArrayList<>();
-        String[] tables = context.getTableName().split(",");
+        String[] tables;
+
+        List<String> tablesList = new ArrayList<>();
+        if (context.getTableName() != null) {
+            tablesList.add(context.getTableName());
+        }
+        if (context.getTableNames() != null) {
+            List<String> tableNamesList = Arrays.asList(context.getTableNames().split(","));
+            if (context.getTableName() != null && tableNamesList.contains(context.getTableName())) {
+                log.info("Table {} is present in tableNames, hence this duplicate entry will be ignored while counting of regions", context.getTableName());
+                tablesList = new ArrayList<>(tableNamesList);
+            } else {
+                tablesList.addAll(tableNamesList);
+            }
+        }
+        tables = tablesList.toArray(new String[0]);
+
         for (String table : tables) {
             TableName tableName = TableName.valueOf(context.getNameSpace() + ":" + table.trim());
             allRegions.addAll(admin.getRegions(tableName));

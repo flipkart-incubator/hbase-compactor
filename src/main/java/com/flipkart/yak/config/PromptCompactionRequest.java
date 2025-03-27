@@ -23,11 +23,13 @@ public class PromptCompactionRequest implements Validable {
     String rsGroup = "default";
 
     @NonNull  final String compactionProfileID;
+
+    String tableNames;
     
     @Override
     public void validate() throws ConfigurationException {
 
-        CompactionContext.validateTable(tableName, nameSpace, rsGroup);
+        CompactionContext.validateTable(tableName, nameSpace, rsGroup, tableNames);
         if (duration == 0) {
             throw new ConfigurationException("duration cannot be null");
         }

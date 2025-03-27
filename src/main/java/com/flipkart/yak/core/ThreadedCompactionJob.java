@@ -31,24 +31,32 @@ public class ThreadedCompactionJob implements Submittable {
 
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
-       log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
-       compactionSchedule = context.getCompactionSchedule();
-       compactionContext = context;
-       compactionExecutable = new RegionByRegionThreadedCompactionJob();
-       compactionExecutable.initResources(compactionContext);
-       ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
-       compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
+        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
+        compactionSchedule = context.getCompactionSchedule();
+        compactionContext = context;
+        compactionExecutable = new RegionByRegionThreadedCompactionJob();
+        compactionExecutable.initResources(compactionContext);
+        ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
+        compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
     }
 
     @Override
     public void setThreadName(CompactionContext compactionContext, CompactionSchedule compactionSchedule) {
-        if(compactionSchedule.isPrompt()) {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+ K8sUtils.PROMPT_LABEL);
+        String threadName;
+        if (compactionContext.getTableNames() != null) {
+            threadName = compactionContext.getTableNames();
+            if (compactionContext.getTableName() != null && !compactionContext.getTableNames().contains(compactionContext.getTableName())) {
+                threadName += "," + compactionContext.getTableName();
+            }
+            threadName += "-" + compactionContext.getNameSpace();
         } else {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
+            threadName = compactionContext.getTableName() + "-" + compactionContext.getNameSpace();
         }
+        if (compactionSchedule.isPrompt()) {
+            threadName += "-" + K8sUtils.PROMPT_LABEL;
+        }
+        Thread.currentThread().setName(threadName);
     }
-
     @Override
     public void run() {
         setThreadName(compactionContext, compactionSchedule);

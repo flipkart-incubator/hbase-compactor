@@ -61,7 +61,12 @@ public class JobSubmitter {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
             compactors.add(this.executorService.submit(threadedCompactionJob));
-            log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableName());
+            if (compactionContext.getTableNames() != null) {
+                log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableNames());
+                }
+            else {
+                log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableName());
+            }
         }
         this.executorService.shutdown();
     }
