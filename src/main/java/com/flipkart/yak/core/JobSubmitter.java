@@ -63,7 +63,7 @@ public class JobSubmitter {
             compactors.add(this.executorService.submit(threadedCompactionJob));
             if (compactionContext.getTableNames() != null) {
                 log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableNames());
-                }
+            }
             else {
                 log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableName());
             }

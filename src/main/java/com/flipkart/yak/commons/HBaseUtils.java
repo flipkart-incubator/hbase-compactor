@@ -14,12 +14,12 @@ public class HBaseUtils {
 
     public static List<RegionInfo> getRegionsAll(CompactionContext context, Admin admin) throws IOException {
         List<RegionInfo> allRegions = new ArrayList<>();
-        String[] tables;
-
         List<String> tablesList = new ArrayList<>();
+
         if (context.getTableName() != null) {
             tablesList.add(context.getTableName());
         }
+
         if (context.getTableNames() != null) {
             List<String> tableNamesList = Arrays.asList(context.getTableNames().split(","));
             if (context.getTableName() != null && tableNamesList.contains(context.getTableName())) {
@@ -29,12 +29,17 @@ public class HBaseUtils {
                 tablesList.addAll(tableNamesList);
             }
         }
-        tables = tablesList.toArray(new String[0]);
 
-        for (String table : tables) {
+        if (tablesList.isEmpty()) {
+            log.error("No tables mentioned in context for compaction. Both tableName and tableNames are null.");
+            return allRegions;
+        }
+
+        for (String table : tablesList) {
             TableName tableName = TableName.valueOf(context.getNameSpace() + ":" + table.trim());
             allRegions.addAll(admin.getRegions(tableName));
         }
+
         return allRegions;
     }
 

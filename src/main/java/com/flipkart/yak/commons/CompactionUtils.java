@@ -12,23 +12,14 @@ public class CompactionUtils {
         float endHour = ScheduleUtils.getEndHour(promptCompactionRequest.getDuration());
         long lifeSpanStart = ScheduleUtils.getCurrentTimeInEpochMilli();
         long lifeSpanEnd = ScheduleUtils.getEndTimeInEpochMilli(promptCompactionRequest.getDuration());
-        CompactionSchedule compactionSchedule = new CompactionSchedule(startHour, endHour);
-        compactionSchedule.setPrompt(true);
-        compactionSchedule.setPromptCompactionLifespan(new PromptCompactionLifeSpan(lifeSpanStart, lifeSpanEnd));
+        CompactionContext compactionContext = new CompactionContext(promptCompactionRequest.getClusterID(), new CompactionSchedule(startHour, endHour), promptCompactionRequest.getCompactionProfileID());
+        compactionContext.setNameSpace(promptCompactionRequest.getNameSpace());
+        compactionContext.setTableName(promptCompactionRequest.getTableName());
+        compactionContext.setTableNames(promptCompactionRequest.getTableNames());
+        compactionContext.setRsGroup(promptCompactionRequest.getRsGroup());
+        compactionContext.getCompactionSchedule().setPrompt(true);
+        compactionContext.getCompactionSchedule().setPromptCompactionLifespan(new PromptCompactionLifeSpan(lifeSpanStart, lifeSpanEnd));
 
-        CompactionContext.CompactionContextBuilder builder = CompactionContext.builder()
-                .clusterID(promptCompactionRequest.getClusterID())
-                .compactionSchedule(compactionSchedule)
-                .nameSpace(promptCompactionRequest.getNameSpace())
-                .rsGroup(promptCompactionRequest.getRsGroup())
-                .compactionProfileID(promptCompactionRequest.getCompactionProfileID());
-
-        if (promptCompactionRequest.getTableNames() != null) {
-            builder.tableNames(promptCompactionRequest.getTableNames());
-        } else if (promptCompactionRequest.getTableName() != null) {
-            builder.tableName(promptCompactionRequest.getTableName());
-        }
-
-        return builder.build();
+        return compactionContext;
     }
 }

@@ -15,7 +15,7 @@ public class PromptCompactionRequest implements Validable {
     @NonNull final String clusterID;
 
     float duration;
-    
+
     String tableName;
 
     String nameSpace = "default";
@@ -25,7 +25,7 @@ public class PromptCompactionRequest implements Validable {
     @NonNull  final String compactionProfileID;
 
     String tableNames;
-    
+
     @Override
     public void validate() throws ConfigurationException {
 
