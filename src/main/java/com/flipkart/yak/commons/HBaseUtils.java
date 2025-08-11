@@ -16,22 +16,23 @@ public class HBaseUtils {
         List<RegionInfo> allRegions = new ArrayList<>();
         List<String> tablesList = new ArrayList<>();
 
-        if (context.getTableName() != null) {
-            tablesList.add(context.getTableName());
-        }
-
-        if (context.getTableNames() != null) {
-            List<String> tableNamesList = Arrays.asList(context.getTableNames().split(","));
-            if (context.getTableName() != null && tableNamesList.contains(context.getTableName())) {
-                log.info("Table {} is present in tableNames, hence this duplicate entry will be ignored while counting of regions", context.getTableName());
-                tablesList = new ArrayList<>(tableNamesList);
-            } else {
-                tablesList.addAll(tableNamesList);
+        if (context.getTableNames() != null && !context.getTableNames().trim().isEmpty()) {
+            // Use specified tables
+            tablesList = Arrays.asList(context.getTableNames().split(","));
+        } else {
+            // Get all tables in the namespace
+            log.info("No tableNames specified, getting all tables in namespace: {}", context.getNameSpace());
+            TableName[] allTables = admin.listTableNames();
+            for (TableName tableName : allTables) {
+                if (tableName.getNamespaceAsString().equals(context.getNameSpace())) {
+                    tablesList.add(tableName.getQualifierAsString());
+                }
             }
+            log.info("Found {} tables in namespace {}: {}", tablesList.size(), context.getNameSpace(), tablesList);
         }
 
         if (tablesList.isEmpty()) {
-            log.error("No tables mentioned in context for compaction. Both tableName and tableNames are null.");
+            log.error("No tables found for compaction in namespace: {}", context.getNameSpace());
             return allRegions;
         }
 
@@ -42,7 +43,6 @@ public class HBaseUtils {
 
         return allRegions;
     }
-
 
     public static void refreshRegionToNodeMapping(Admin admin, List<String> listOfEncodedRegions,
                                                   Map<String, List<String>> regionFNHostnameMapping) throws IOException  {
@@ -62,19 +62,19 @@ public class HBaseUtils {
         List<RegionInfo> regionInfosForThisContext = getRegionsAll(compactionContext, admin);
         Set<RegionInfo> setOfRegionsForThisContext = new HashSet<>(regionInfosForThisContext);
 
-            for (ServerName sn : admin.getRegionServers()) {
-                try {
-                    List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
-                    regionInfosForThisServer.forEach(region -> {
-                        if (setOfRegionsForThisContext.contains(region)) {
-                            hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
-                            hostToRegionMapping.get(sn.getHostname()).add(region);
-                        }
-                    });
-                } catch (Exception e) {
-                    log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
-                }
+        for (ServerName sn : admin.getRegionServers()) {
+            try {
+                List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
+                regionInfosForThisServer.forEach(region -> {
+                    if (setOfRegionsForThisContext.contains(region)) {
+                        hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
+                        hostToRegionMapping.get(sn.getHostname()).add(region);
+                    }
+                });
+            } catch (Exception e) {
+                log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
             }
+        }
 
         return hostToRegionMapping;
     }

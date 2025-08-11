@@ -16,8 +16,6 @@ public class PromptCompactionRequest implements Validable {
 
     float duration;
 
-    String tableName;
-
     String nameSpace = "default";
 
     String rsGroup = "default";
@@ -29,7 +27,7 @@ public class PromptCompactionRequest implements Validable {
     @Override
     public void validate() throws ConfigurationException {
 
-        CompactionContext.validateTable(tableName, nameSpace, rsGroup, tableNames);
+        CompactionContext.validateTable(nameSpace, rsGroup, tableNames);
         if (duration == 0) {
             throw new ConfigurationException("duration cannot be null");
         }

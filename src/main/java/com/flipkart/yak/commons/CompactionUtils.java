@@ -14,7 +14,6 @@ public class CompactionUtils {
         long lifeSpanEnd = ScheduleUtils.getEndTimeInEpochMilli(promptCompactionRequest.getDuration());
         CompactionContext compactionContext = new CompactionContext(promptCompactionRequest.getClusterID(), new CompactionSchedule(startHour, endHour), promptCompactionRequest.getCompactionProfileID());
         compactionContext.setNameSpace(promptCompactionRequest.getNameSpace());
-        compactionContext.setTableName(promptCompactionRequest.getTableName());
         compactionContext.setTableNames(promptCompactionRequest.getTableNames());
         compactionContext.setRsGroup(promptCompactionRequest.getRsGroup());
         compactionContext.getCompactionSchedule().setPrompt(true);

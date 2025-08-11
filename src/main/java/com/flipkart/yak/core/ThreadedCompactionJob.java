@@ -31,26 +31,22 @@ public class ThreadedCompactionJob implements Submittable {
 
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
-       log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
-       compactionSchedule = context.getCompactionSchedule();
-       compactionContext = context;
-       compactionExecutable = new RegionByRegionThreadedCompactionJob();
-       compactionExecutable.initResources(compactionContext);
-       ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
-       compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
+        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
+        compactionSchedule = context.getCompactionSchedule();
+        compactionContext = context;
+        compactionExecutable = new RegionByRegionThreadedCompactionJob();
+        compactionExecutable.initResources(compactionContext);
+        ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
+        compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
     }
 
     @Override
     public void setThreadName(CompactionContext compactionContext, CompactionSchedule compactionSchedule) {
         String threadName;
-        if (compactionContext.getTableNames() != null) {
-            threadName = compactionContext.getTableNames();
-            if (compactionContext.getTableName() != null && !compactionContext.getTableNames().contains(compactionContext.getTableName())) {
-                threadName += "," + compactionContext.getTableName();
-            }
-            threadName += "-" + compactionContext.getNameSpace();
+        if (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty()) {
+            threadName = compactionContext.getTableNames() + "-" + compactionContext.getNameSpace();
         } else {
-            threadName = compactionContext.getTableName() + "-" + compactionContext.getNameSpace();
+            threadName = "all-tables-" + compactionContext.getNameSpace();
         }
         if (compactionSchedule.isPrompt()) {
             threadName += "-" + K8sUtils.PROMPT_LABEL;

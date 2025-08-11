@@ -61,11 +61,10 @@ public class JobSubmitter {
                 log.error("Ignoring Context {} error {}", compactionContext, e.getMessage());
             }
             compactors.add(this.executorService.submit(threadedCompactionJob));
-            if (compactionContext.getTableNames() != null) {
+            if (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty()) {
                 log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableNames());
-            }
-            else {
-                log.info("submitted for {}:{}", compactionContext.getNameSpace(), compactionContext.getTableName());
+            } else {
+                log.info("submitted for {}:all-tables", compactionContext.getNameSpace());
             }
         }
         this.executorService.shutdown();
@@ -92,8 +91,8 @@ public class JobSubmitter {
             return;
         }
         for(Future compactionTask : compactors) {
-         compactionTask.cancel(true);
-         log.info("awaiting compaction task to end");
+            compactionTask.cancel(true);
+            log.info("awaiting compaction task to end");
         }
         this.await();
         if(executorService!=null) {
@@ -140,7 +139,7 @@ public class JobSubmitter {
                         connectionInventory.put(compactionContext.getClusterID(), connection);
                     }
                 }
-            log.debug("loaded connection for {}", compactionContext);
+                log.debug("loaded connection for {}", compactionContext);
             } catch (IOException e) {
                 log.error("Exception while bootstrapping connection with {} - error: {}", compactionContext.getClusterID(), e.getMessage());
             }

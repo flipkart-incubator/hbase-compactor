@@ -25,8 +25,6 @@ public class CompactionContext implements Validable {
 
     @NonNull final CompactionSchedule compactionSchedule;
 
-    String tableName;
-
     String nameSpace = "default";
 
     String rsGroup = "default";
@@ -47,9 +45,6 @@ public class CompactionContext implements Validable {
         if (nameSpace != null && that.getNameSpace() != null && !nameSpace.equals(that.getNameSpace())) {
             isTargetSame = false;
         }
-        if (tableName != null && that.getTableName() != null && !tableName.equals(that.getTableName())) {
-            isTargetSame = false;
-        }
         if (tableNames != null && that.getTableNames() != null && !tableNames.equals(that.getTableNames())) {
             isTargetSame = false;
         }
@@ -65,19 +60,13 @@ public class CompactionContext implements Validable {
 
     @Override
     public void validate() throws ConfigurationException {
-        log.info("Validating CompactionContext: tableName={}, tableNames={}", tableName, tableNames);
-        validateTable(tableName, nameSpace, rsGroup, tableNames);
+        log.info("Validating CompactionContext: tableNames={}, nameSpace={}", tableNames, nameSpace);
+        validateTable(nameSpace, rsGroup, tableNames);
     }
 
-    static void validateTable(String tableName, String nameSpace, String rsGroup, String tableNames) throws ConfigurationException {
-        if (tableName == null && nameSpace == null && rsGroup == null && tableNames == null) {
+    static void validateTable(String nameSpace, String rsGroup, String tableNames) throws ConfigurationException {
+        if (nameSpace == null && rsGroup == null && tableNames == null) {
             throw new ConfigurationException("no target for compaction specified");
-        }
-        if (tableName != null && tableName.contains(":")) {
-            String namespace = tableName.split(":")[0];
-            if (namespace.equals("hbase")) {
-                throw new ConfigurationException("hbase tables should not be compacted with custom trigger");
-            }
         }
         if (tableNames != null) {
             for (String table : tableNames.split(",")) {
@@ -95,7 +84,6 @@ public class CompactionContext implements Validable {
     public String toString() {
         return "{" +
                 "clusterID:'" + clusterID + '\'' +
-                ", tableName:'" + tableName + '\'' +
                 ", nameSpace='" + nameSpace + '\'' +
                 ", rsGroup:'" + rsGroup + '\'' +
                 ", schedule:'" + compactionSchedule + '\''+

@@ -32,13 +32,13 @@ public class PolicyRunner {
             Object resource = this.getOrCreateResource(regionSelectionPolicy, compactionContext);
 
             if (!baseReport.isPresent()) {
-                if (compactionContext.getTableNames() != null){
+                if (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty()){
 
                     log.debug("{}:{} No base report specified, hence proceeding with no filter for table names: {}",
                             regionSelectionPolicy.getClass().getName(), compactionContext.getClusterID(), compactionContext.getTableNames());
                 } else {
-                    log.debug("{}:{} No base report specified, hence proceeding with no filter for table name: {}",
-                            regionSelectionPolicy.getClass().getName(), compactionContext.getClusterID(), compactionContext.getTableName());
+                    log.debug("{}:{} No base report specified, hence proceeding with no filter for all tables in namespace: {}",
+                            regionSelectionPolicy.getClass().getName(), compactionContext.getClusterID(), compactionContext.getNameSpace());
                 }
                 report = regionSelectionPolicy.getReport(compactionContext, resource);
             } else {
@@ -52,10 +52,10 @@ public class PolicyRunner {
             throw new CompactionRuntimeException(e);
         }
         if (report != null) {
-            if (compactionContext.getTableNames() != null) {
+            if (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty()) {
                 log.info("{}:{} Report size {}", compactionContext.getNameSpace(), compactionContext.getTableNames(), report.size());
             } else {
-                log.info("{}:{} Report size {}", compactionContext.getNameSpace(), compactionContext.getTableName(), report.size());
+                log.info("{}:all-tables Report size {}", compactionContext.getNameSpace(), report.size());
             }
             if (log.isDebugEnabled()) {
                 report.forEach((K, V) -> {
