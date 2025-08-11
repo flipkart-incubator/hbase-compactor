@@ -31,13 +31,13 @@ public class ThreadedCompactionJob implements Submittable {
 
     @Override
     public void init(CompactionContext context) throws ConfigurationException {
-        log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
-        compactionSchedule = context.getCompactionSchedule();
-        compactionContext = context;
-        compactionExecutable = new RegionByRegionThreadedCompactionJob();
-        compactionExecutable.initResources(compactionContext);
-        ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
-        compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
+       log.info("loading compaction job: {} with context {}", this.getClass().getName(), context);
+       compactionSchedule = context.getCompactionSchedule();
+       compactionContext = context;
+       compactionExecutable = new RegionByRegionThreadedCompactionJob();
+       compactionExecutable.initResources(compactionContext);
+       ProfileInventory profileInventory = ProfileInventoryFactory.getProfileInventory();
+       compactionManager = new CompactionManager(compactionSchedule, compactionContext, compactionExecutable, profileInventory);
     }
 
     @Override

@@ -91,8 +91,8 @@ public class JobSubmitter {
             return;
         }
         for(Future compactionTask : compactors) {
-            compactionTask.cancel(true);
-            log.info("awaiting compaction task to end");
+         compactionTask.cancel(true);
+         log.info("awaiting compaction task to end");
         }
         this.await();
         if(executorService!=null) {
@@ -139,7 +139,7 @@ public class JobSubmitter {
                         connectionInventory.put(compactionContext.getClusterID(), connection);
                     }
                 }
-                log.debug("loaded connection for {}", compactionContext);
+            log.debug("loaded connection for {}", compactionContext);
             } catch (IOException e) {
                 log.error("Exception while bootstrapping connection with {} - error: {}", compactionContext.getClusterID(), e.getMessage());
             }

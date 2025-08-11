@@ -62,19 +62,19 @@ public class HBaseUtils {
         List<RegionInfo> regionInfosForThisContext = getRegionsAll(compactionContext, admin);
         Set<RegionInfo> setOfRegionsForThisContext = new HashSet<>(regionInfosForThisContext);
 
-        for (ServerName sn : admin.getRegionServers()) {
-            try {
-                List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
-                regionInfosForThisServer.forEach(region -> {
-                    if (setOfRegionsForThisContext.contains(region)) {
-                        hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
-                        hostToRegionMapping.get(sn.getHostname()).add(region);
-                    }
-                });
-            } catch (Exception e) {
-                log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
+            for (ServerName sn : admin.getRegionServers()) {
+                try {
+                    List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
+                    regionInfosForThisServer.forEach(region -> {
+                        if (setOfRegionsForThisContext.contains(region)) {
+                            hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
+                            hostToRegionMapping.get(sn.getHostname()).add(region);
+                        }
+                    });
+                } catch (Exception e) {
+                    log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
+                }
             }
-        }
 
         return hostToRegionMapping;
     }
