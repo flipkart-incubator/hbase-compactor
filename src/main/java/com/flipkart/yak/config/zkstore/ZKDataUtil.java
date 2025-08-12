@@ -57,7 +57,7 @@ public class ZKDataUtil {
     public static String getContextPath (CompactionContext compactionContext) {
         String key = compactionContext.getClusterID() + CONTEXT_DELIMITER +compactionContext.getRsGroup() +
                 CONTEXT_DELIMITER + compactionContext.getNameSpace() + CONTEXT_DELIMITER +
-                (compactionContext.getTableNames() != null ? compactionContext.getTableNames() : "all-tables");
+                (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty() ? compactionContext.getTableNames() : "all-tables");
         String hashCode = Hashing.murmur3_32().hashString(key, StandardCharsets.UTF_8).toString();
         String path = ZKPaths.makePath(getContextBasePath(), hashCode);
         log.info("creating path for compaction context: {}", path);

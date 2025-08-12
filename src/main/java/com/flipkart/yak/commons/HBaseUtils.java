@@ -17,10 +17,15 @@ public class HBaseUtils {
         List<String> tablesList = new ArrayList<>();
 
         if (context.getTableNames() != null && !context.getTableNames().trim().isEmpty()) {
-            // Use specified tables
-            tablesList = Arrays.asList(context.getTableNames().split(","));
+            final LinkedHashSet<String> unique = new LinkedHashSet<>();
+            for (String part : context.getTableNames().split(",")) {
+                final String t = part.trim();
+                if (!t.isEmpty()) {
+                    unique.add(t);
+                }
+            }
+            tablesList = new ArrayList<>(unique);
         } else {
-            // Get all tables in the namespace
             log.info("No tableNames specified, getting all tables in namespace: {}", context.getNameSpace());
             TableName[] allTables = admin.listTableNames();
             for (TableName tableName : allTables) {
@@ -37,7 +42,7 @@ public class HBaseUtils {
         }
 
         for (String table : tablesList) {
-            TableName tableName = TableName.valueOf(context.getNameSpace() + ":" + table.trim());
+            TableName tableName = TableName.valueOf(context.getNameSpace() + ":" + table);
             allRegions.addAll(admin.getRegions(tableName));
         }
 
@@ -62,19 +67,19 @@ public class HBaseUtils {
         List<RegionInfo> regionInfosForThisContext = getRegionsAll(compactionContext, admin);
         Set<RegionInfo> setOfRegionsForThisContext = new HashSet<>(regionInfosForThisContext);
 
-            for (ServerName sn : admin.getRegionServers()) {
-                try {
-                    List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
-                    regionInfosForThisServer.forEach(region -> {
-                        if (setOfRegionsForThisContext.contains(region)) {
-                            hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
-                            hostToRegionMapping.get(sn.getHostname()).add(region);
-                        }
-                    });
-                } catch (Exception e) {
-                    log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
-                }
+        for (ServerName sn : admin.getRegionServers()) {
+            try {
+                List<RegionInfo> regionInfosForThisServer = admin.getRegions(sn);
+                regionInfosForThisServer.forEach(region -> {
+                    if (setOfRegionsForThisContext.contains(region)) {
+                        hostToRegionMapping.putIfAbsent(sn.getHostname(), new HashSet<>());
+                        hostToRegionMapping.get(sn.getHostname()).add(region);
+                    }
+                });
+            } catch (Exception e) {
+                log.error("could not get info for {}: Error: {}", sn.getHostname(), e.getMessage());
             }
+        }
 
         return hostToRegionMapping;
     }

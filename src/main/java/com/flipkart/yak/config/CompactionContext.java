@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flipkart.yak.interfaces.Validable;
 import lombok.*;
@@ -31,6 +32,7 @@ public class CompactionContext implements Validable {
 
     @NonNull  final String compactionProfileID;
 
+    @JsonAlias({"tableName"})
     String tableNames;
 
     @Override

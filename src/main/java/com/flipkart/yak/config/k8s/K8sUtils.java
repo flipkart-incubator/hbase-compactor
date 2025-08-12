@@ -230,7 +230,7 @@ public class K8sUtils {
 
     public static Pair<String, String> getSerializedContext(CompactionContext compactionContext){
         String key = compactionContext.getClusterID() +compactionContext.getRsGroup() +
-                compactionContext.getNameSpace() + (compactionContext.getTableNames() != null ? compactionContext.getTableNames() : "all-tables");
+                compactionContext.getNameSpace() + (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty() ? compactionContext.getTableNames() : "all-tables");
         if (compactionContext.getCompactionSchedule().isPrompt()) {
             key += PROMPT_LABEL;
         }

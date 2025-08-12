@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.flipkart.yak.interfaces.Validable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,6 +23,7 @@ public class PromptCompactionRequest implements Validable {
 
     @NonNull  final String compactionProfileID;
 
+    @JsonAlias({"tableName"})
     String tableNames;
 
     @Override
