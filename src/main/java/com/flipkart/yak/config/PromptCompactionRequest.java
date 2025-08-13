@@ -1,5 +1,6 @@
 package com.flipkart.yak.config;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.flipkart.yak.interfaces.Validable;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -15,19 +16,20 @@ public class PromptCompactionRequest implements Validable {
     @NonNull final String clusterID;
 
     float duration;
-    
-    String tableName;
 
     String nameSpace = "default";
 
     String rsGroup = "default";
 
     @NonNull  final String compactionProfileID;
-    
+
+    @JsonAlias({"tableName"})
+    String tableNames;
+
     @Override
     public void validate() throws ConfigurationException {
 
-        CompactionContext.validateTable(tableName, nameSpace, rsGroup);
+        CompactionContext.validateTable(nameSpace, rsGroup, tableNames);
         if (duration == 0) {
             throw new ConfigurationException("duration cannot be null");
         }

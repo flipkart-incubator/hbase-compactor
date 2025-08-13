@@ -37,7 +37,7 @@ class XMLConfigLoderTest {
         assert config1 == config2;
         assert compactionTriggerConfig.compactionProfileConfigs.size() == 1;
         assert config1.getCompactionContexts().size() == 1;
-        assert config1.getCompactionContexts().iterator().next().getTableName().equals("preprod_compaction:table_1");
+        assert config1.getCompactionContexts().iterator().next().getTableNames().equals("preprod_compaction:table_1");
         assert compactionTriggerConfig.compactionContexts.size() == 1;
         assert compactionProfileConfig.getID().equals("testID");
         assert compactionProfileConfig.getAggregator().getFirst().equals("com.flipkart.yak.aggregator.ChainReportAggregator");

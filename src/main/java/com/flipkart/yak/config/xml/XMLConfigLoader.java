@@ -165,7 +165,7 @@ public class XMLConfigLoader extends AbstractFileBasedConfigLoader {
             compactionContext.setNameSpace(configLoadedMap.get(XMLConfigTags.CONTEXT_NAMESPACE));
         }
         if (configLoadedMap.containsKey(XMLConfigTags.CONTEXT_TABLE_NAME)) {
-            compactionContext.setTableName(configLoadedMap.get(XMLConfigTags.CONTEXT_TABLE_NAME));
+            compactionContext.setTableNames(configLoadedMap.get(XMLConfigTags.CONTEXT_TABLE_NAME));
         }
     }
 

@@ -42,13 +42,17 @@ public class ThreadedCompactionJob implements Submittable {
 
     @Override
     public void setThreadName(CompactionContext compactionContext, CompactionSchedule compactionSchedule) {
-        if(compactionSchedule.isPrompt()) {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace()+"-"+ K8sUtils.PROMPT_LABEL);
+        String threadName;
+        if (compactionContext.getTableNames() != null && !compactionContext.getTableNames().trim().isEmpty()) {
+            threadName = compactionContext.getTableNames() + "-" + compactionContext.getNameSpace();
         } else {
-            Thread.currentThread().setName(compactionContext.getTableName()+"-"+compactionContext.getNameSpace());
+            threadName = "all-tables-" + compactionContext.getNameSpace();
         }
+        if (compactionSchedule.isPrompt()) {
+            threadName += "-" + K8sUtils.PROMPT_LABEL;
+        }
+        Thread.currentThread().setName(threadName);
     }
-
     @Override
     public void run() {
         setThreadName(compactionContext, compactionSchedule);
