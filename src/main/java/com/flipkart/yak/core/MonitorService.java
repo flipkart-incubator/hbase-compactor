@@ -7,6 +7,7 @@ import com.flipkart.yak.config.CompactionContext;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 public final class MonitorService {
 
@@ -16,7 +17,7 @@ public final class MonitorService {
     private static final String METRIC_TYPE_DELIMITER = ".";
 
     private enum MetricType {
-        METER, COUNTER, TIMER, HISTOGRAM;
+        METER, COUNTER, TIMER, HISTOGRAM, GAUGE;
     };
     public static  void reportCounterIncr(Class name, CompactionContext  context, String metric, int value) {
         Counter counter = (Counter)getMetric(name, context,metric, MetricType.COUNTER);
@@ -44,6 +45,33 @@ public final class MonitorService {
         String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.METER;
         metricRegistry.remove(metricName);
         metricStore.remove(metricNameForStorage);
+    }
+
+    public static void registerGauge(Class source, CompactionContext context, String name, Supplier<Number> valueSupplier) {
+        String metricName = createMetricName(source, context, name);
+        String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.GAUGE;
+
+        // Remove existing gauge if present
+        metricStore.remove(metricNameForStorage);
+        metricRegistry.remove(metricName);
+
+        // Register new gauge
+        Gauge<Number> gauge = valueSupplier::get;
+        metricRegistry.register(metricName, gauge);
+        metricStore.put(metricNameForStorage, gauge);
+    }
+
+    public static void setCounterValue(Class name, CompactionContext context, String metric, long value) {
+        String metricName = createMetricName(name, context, metric);
+        String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.COUNTER;
+
+        // Remove and recreate counter to set absolute value
+        metricStore.remove(metricNameForStorage);
+        metricRegistry.remove(metricName);
+
+        Counter counter = metricRegistry.counter(metricName);
+        counter.inc(value);
+        metricStore.put(metricNameForStorage, counter);
     }
 
     private static String createMetricName(Class source, CompactionContext  context, String name) {
