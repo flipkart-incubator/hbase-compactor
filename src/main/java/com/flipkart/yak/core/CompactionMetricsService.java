@@ -35,10 +35,8 @@ public class CompactionMetricsService {
      * Collect and update table-level compaction metrics for the given context
      */
     public static void updateMetrics(CompactionContext context, Connection connection, List<RegionInfo> allRegions) {
-        try {
-            log.debug("Updating table-level compaction metrics for context: {}", context);
-            
-            Admin admin = connection.getAdmin();
+        log.debug("Updating table-level compaction metrics for context: {}", context);
+        try (Admin admin = connection.getAdmin()) {
             long currentTime = EnvironmentEdgeManager.currentTime();
             
 
@@ -61,8 +59,10 @@ public class CompactionMetricsService {
                     context, tableMetrics.size(), totalRegions, totalProblematicRegions, 
                     String.format("%.2f", overallPercentage));
                     
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Failed to update compaction metrics for context {}: {}", context, e.getMessage(), e);
+        } catch (Exception e) {
+            log.error("Unexpected error while updating compaction metrics for context {}: {}", context, e.getMessage(), e);
         }
     }
     
