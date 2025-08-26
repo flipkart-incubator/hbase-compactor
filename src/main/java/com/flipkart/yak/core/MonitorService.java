@@ -51,11 +51,9 @@ public final class MonitorService {
         String metricName = createMetricName(source, context, name);
         String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.GAUGE;
 
-        // Remove existing gauge if present
         metricStore.remove(metricNameForStorage);
         metricRegistry.remove(metricName);
 
-        // Register new gauge
         Gauge<Number> gauge = valueSupplier::get;
         metricRegistry.register(metricName, gauge);
         metricStore.put(metricNameForStorage, gauge);
@@ -65,7 +63,6 @@ public final class MonitorService {
         String metricName = createMetricName(name, context, metric);
         String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.COUNTER;
 
-        // Remove and recreate counter to set absolute value
         metricStore.remove(metricNameForStorage);
         metricRegistry.remove(metricName);
 
