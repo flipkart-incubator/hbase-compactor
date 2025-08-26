@@ -335,7 +335,7 @@ public class CompactionMetricsService {
             return false;
         }
         long timeSinceNewestCompaction = currentTime - newestCompactionTime;
-        return timeSinceNewestCompaction <= NEVER_COMPACTED_GRACE_PERIOD_MILLIS;
+        return timeSinceNewestCompaction >= NEVER_COMPACTED_GRACE_PERIOD_MILLIS;
     }
     
     /**
