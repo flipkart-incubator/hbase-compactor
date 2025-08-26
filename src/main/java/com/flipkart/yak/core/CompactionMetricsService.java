@@ -149,14 +149,14 @@ public class CompactionMetricsService {
                         tableMetric.tableName, tableMetric.totalRegions);
                 continue;
             }
-            
 
-            log.warn("TABLE_COMPACTION_ALERT: Table '{}' has {} out of {} regions ({:.1f}%) not compacted in last 3 days. " +
+
+            log.warn(" TABLE_COMPACTION_ALERT: Table '{}' has {} out of {} regions ({}%) not compacted in last 3 days. " +
                     "Context: {}. Problematic regions: [{}]", 
                     tableMetric.tableName,
                     tableMetric.regionsNotCompactedIn3Days,
                     tableMetric.totalRegions,
-                    tableMetric.percentageNotCompactedIn3Days,
+                    String.format("%.1f", tableMetric.percentageNotCompactedIn3Days),
                     context,
                     String.join(", ", tableMetric.regionsNotCompactedIn3DaysList));
         }
@@ -249,7 +249,7 @@ public class CompactionMetricsService {
     /**
      * Data class to hold table-specific compaction metrics
      */
-    private static class TableCompactionMetrics {
+    public static final class TableCompactionMetrics {
         public final String tableName;
         public final int totalRegions;
         public final int regionsNotCompactedIn3Days;
