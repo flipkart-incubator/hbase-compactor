@@ -7,7 +7,6 @@ import com.flipkart.yak.config.CompactionContext;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 public final class MonitorService {
 
@@ -17,7 +16,7 @@ public final class MonitorService {
     private static final String METRIC_TYPE_DELIMITER = ".";
 
     private enum MetricType {
-        METER, COUNTER, TIMER, HISTOGRAM, GAUGE;
+        METER, COUNTER, TIMER, HISTOGRAM;
     };
     public static  void reportCounterIncr(Class name, CompactionContext  context, String metric, int value) {
         Counter counter = (Counter)getMetric(name, context,metric, MetricType.COUNTER);
@@ -45,18 +44,6 @@ public final class MonitorService {
         String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.METER;
         metricRegistry.remove(metricName);
         metricStore.remove(metricNameForStorage);
-    }
-
-    public static void registerGauge(Class source, CompactionContext context, String name, Supplier<Number> valueSupplier) {
-        String metricName = createMetricName(source, context, name);
-        String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.GAUGE;
-
-        metricStore.remove(metricNameForStorage);
-        metricRegistry.remove(metricName);
-
-        Gauge<Number> gauge = valueSupplier::get;
-        metricRegistry.register(metricName, gauge);
-        metricStore.put(metricNameForStorage, gauge);
     }
 
     public static void setCounterValue(Class name, CompactionContext context, String metric, long value) {
