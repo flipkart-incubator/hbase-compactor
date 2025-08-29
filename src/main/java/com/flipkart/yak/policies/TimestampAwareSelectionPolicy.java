@@ -10,7 +10,6 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -30,88 +29,29 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
         List<Pair<RegionInfo,Long>> sortedListOfRegionOnMCTime = new ArrayList<>();
         Admin admin = connection.getAdmin();
         long currentTimestamp = EnvironmentEdgeManager.currentTime();
-
-        final long THREE_DAYS_MILLIS = TimeUnit.DAYS.toMillis(3);
-        int totalRegions = allRegions.size();
-        int regionsNotCompactedIn3Days = 0;
-        List<String> nonCompactedRegionsIn3Days = new ArrayList<>();
-        Map<String, String> regionCompactionStatus = new HashMap<>();
-
+        int regionsNotCompactedIn3Days = 0, regionsCompactedEarlierThan3Days = 0;
         for(RegionInfo region: allRegions) {
             try {
                 long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
-
                 if (timestampMajorCompaction > 0) {
                     sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
-
                     long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
-                    if (timeSinceLastCompaction > THREE_DAYS_MILLIS) {
+                    if (timeSinceLastCompaction > TimeUnit.DAYS.toMillis(3)) {
                         regionsNotCompactedIn3Days++;
-                        nonCompactedRegionsIn3Days.add(region.getEncodedName());
-
-                        regionCompactionStatus.put(region.getEncodedName(),
-                                String.format("%s (last compacted: %s, %d days ago)",
-                                        region.getEncodedName(),
-                                        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)),
-                                        TimeUnit.MILLISECONDS.toDays(timeSinceLastCompaction)));
+                        regionsCompactedEarlierThan3Days++;
                     }
                 } else {
                     regionsNotCompactedIn3Days++;
-                    nonCompactedRegionsIn3Days.add(region.getEncodedName());
-                    regionCompactionStatus.put(region.getEncodedName(),
-                            String.format("%s (never compacted)",
-                                    region.getEncodedName()));
                 }
             } catch (Exception e) {
                 regionsNotCompactedIn3Days++;
-                nonCompactedRegionsIn3Days.add(region.getEncodedName());
-                regionCompactionStatus.put(region.getEncodedName(),
-                        String.format("%s (error getting timestamp: %s)",
-                                region.getEncodedName(),
-                                e.getMessage()));
-                log.warn("Failed to get compaction timestamp for region {} in table {}: {}",
-                        region.getEncodedName(), region.getTable().getNameAsString(), e.getMessage());
+                log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
-
-        double percentage = totalRegions > 0 ? (double) regionsNotCompactedIn3Days / totalRegions * 100.0 : 0.0;
-
-        if (regionsNotCompactedIn3Days > 0) {
-            log.warn("REGIONS NOT COMPACTED IN LAST THREE DAYS: Found {} out of {} regions ({}%)",
-                    regionsNotCompactedIn3Days, totalRegions, String.format("%.1f", percentage));
-
-            Map<String, List<String>> regionsByTable = new HashMap<>();
-            for (String regionId : nonCompactedRegionsIn3Days) {
-                String status = regionCompactionStatus.get(regionId);
-                if (status != null) {
-                    // Find the table name for this region from allRegions
-                    String tableName = null;
-                    for (RegionInfo region : allRegions) {
-                        if (region.getEncodedName().equals(regionId)) {
-                            tableName = region.getTable().getNameAsString();
-                            break;
-                        }
-                    }
-
-                    if (tableName != null) {
-                        regionsByTable.computeIfAbsent(tableName, k -> new ArrayList<>()).add(status);
-                    }
-                }
-            }
-
-            for (Map.Entry<String, List<String>> entry : regionsByTable.entrySet()) {
-                String tableName = entry.getKey();
-                List<String> tableRegions = entry.getValue();
-                log.warn("   Table '{}' has {} problematic regions:", tableName, tableRegions.size());
-                for (String regionStatus : tableRegions) {
-                    log.warn("     - {}", regionStatus);
-                }
-            }
-        } else {
-            log.info("COMPACTION MONITORING: All {} regions are healthy (compacted within last three days)", totalRegions);
-        }
-
+        log.info("{} out of {} regions are not compacted in last 3 days: {} regions were compacted earlier than 3 days, {} regions were never compacted due to zero size or new region addition or regions compaction status could not be fetched due to exceptions",
+                regionsNotCompactedIn3Days, allRegions.size(), regionsCompactedEarlierThan3Days, (regionsNotCompactedIn3Days - regionsCompactedEarlierThan3Days));
         MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompactedIn3Days", regionsNotCompactedIn3Days);
+
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
         if (size > 0) {
