@@ -33,7 +33,7 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
         List<Pair<RegionInfo,Long>> sortedListOfRegionOnMCTime = new ArrayList<>();
         Admin admin = connection.getAdmin();
         long currentTimestamp = EnvironmentEdgeManager.currentTime();
-        int regionsNotCompactedIn3Days = 0, regionsCompactedEarlierThan3Days = 0;
+        int regionsNotCompacted = 0;
         for(RegionInfo region: allRegions) {
             try {
                 long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
@@ -41,23 +41,21 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                     sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
                     long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
                     if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
-                        regionsNotCompactedIn3Days++;
-                        regionsCompactedEarlierThan3Days++;
+                        regionsNotCompacted++;
                         log.info("Region {} not compacted in last 3 days (last compacted: {})",
                                 region.getEncodedName(),
                                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
                     }
                 } else {
-                    regionsNotCompactedIn3Days++;
+                    regionsNotCompacted++;
                 }
             } catch (Exception e) {
-                regionsNotCompactedIn3Days++;
+                regionsNotCompacted++;
                 log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
-        MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompactedIn3Days", regionsNotCompactedIn3Days);
-        MonitorService.setCounterValue(this.getClass(), context, "regionsCompactedEarlierThan3Days", regionsCompactedEarlierThan3Days);
-
+        MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
+        
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
         if (size > 0) {
