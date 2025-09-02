@@ -10,6 +10,7 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +23,9 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 
     private long DELAY_BETWEEN_TWO_COMPACTIONS = 86400000;
     private static String KEY_DELAY_BETWEEN_TWO_COMPACTIONS = "compactor.policy.compaction.delay";
+    private long MONITORING_THRESHOLD_MILLIS = TimeUnit.DAYS.toMillis(3);
+    private static String KEY_MONITORING_THRESHOLD = "compactor.policy.monitoring.threshold.days";
+
 
     @Override
     List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions, Connection connection, CompactionContext context) throws IOException {
@@ -36,9 +40,12 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                 if (timestampMajorCompaction > 0) {
                     sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
                     long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
-                    if (timeSinceLastCompaction > TimeUnit.DAYS.toMillis(3)) {
+                    if (timeSinceLastCompaction > MONITORING_THRESHOLD_MILLIS) {
                         regionsNotCompactedIn3Days++;
                         regionsCompactedEarlierThan3Days++;
+                        log.info("Region {} not compacted in last 3 days (last compacted: {})",
+                                region.getEncodedName(),
+                                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
                     }
                 } else {
                     regionsNotCompactedIn3Days++;
@@ -48,9 +55,8 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                 log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
-        log.info("{} out of {} regions are not compacted in last 3 days: {} regions were compacted earlier than 3 days, {} regions were never compacted due to zero size or new region addition or regions compaction status could not be fetched due to exceptions",
-                regionsNotCompactedIn3Days, allRegions.size(), regionsCompactedEarlierThan3Days, (regionsNotCompactedIn3Days - regionsCompactedEarlierThan3Days));
         MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompactedIn3Days", regionsNotCompactedIn3Days);
+        MonitorService.setCounterValue(this.getClass(), context, "regionsCompactedEarlierThan3Days", regionsCompactedEarlierThan3Days);
 
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
@@ -76,8 +82,12 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                 if (pair.getFirst().equals(KEY_DELAY_BETWEEN_TWO_COMPACTIONS)) {
                     DELAY_BETWEEN_TWO_COMPACTIONS = Long.parseLong(pair.getSecond());
                 }
+                if (pair.getFirst().equals(KEY_MONITORING_THRESHOLD)) {
+                    MONITORING_THRESHOLD_MILLIS = TimeUnit.DAYS.toMillis(Long.parseLong(pair.getSecond()));
+                }
             });
         }
         log.info("Delay between two compactions: {}", DELAY_BETWEEN_TWO_COMPACTIONS);
+        log.info("Monitoring threshold for regions not compacted: {} days", TimeUnit.MILLISECONDS.toDays(MONITORING_THRESHOLD_MILLIS));
     }
 }
