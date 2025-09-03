@@ -10,7 +10,9 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Simple implementation of {@link com.flipkart.yak.interfaces.RegionSelectionPolicy} that ignores a region as eligible
@@ -21,19 +23,39 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 
     private long DELAY_BETWEEN_TWO_COMPACTIONS = 86400000;
     private static String KEY_DELAY_BETWEEN_TWO_COMPACTIONS = "compactor.policy.compaction.delay";
+    private long MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION = TimeUnit.DAYS.toMillis(3);
+    private static String KEY_MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION = "compactor.policy.min.days.between.consecutive.compactions";
+
 
     @Override
-    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions, Connection connection) throws IOException {
+    List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions, Connection connection, CompactionContext context) throws IOException {
         List<String> regionsWhichCanBeCompacted = new ArrayList<>();
         List<Pair<RegionInfo,Long>> sortedListOfRegionOnMCTime = new ArrayList<>();
         Admin admin = connection.getAdmin();
         long currentTimestamp = EnvironmentEdgeManager.currentTime();
+        int regionsNotCompacted = 0;
         for(RegionInfo region: allRegions) {
-            long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
-            if (timestampMajorCompaction > 0) {
-                sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
+            try {
+                long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
+                if (timestampMajorCompaction > 0) {
+                    sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
+                    long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
+                    if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
+                        regionsNotCompacted++;
+                        log.info("Region {} not compacted in last 3 days (last compacted: {})",
+                                region.getEncodedName(),
+                                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
+                    }
+                } else {
+                    regionsNotCompacted++;
+                }
+            } catch (Exception e) {
+                regionsNotCompacted++;
+                log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
+        MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
+        
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
         if (size > 0) {
@@ -58,8 +80,12 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                 if (pair.getFirst().equals(KEY_DELAY_BETWEEN_TWO_COMPACTIONS)) {
                     DELAY_BETWEEN_TWO_COMPACTIONS = Long.parseLong(pair.getSecond());
                 }
+                if (pair.getFirst().equals(KEY_MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION)) {
+                    MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION = TimeUnit.DAYS.toMillis(Long.parseLong(pair.getSecond()));
+                }
             });
         }
         log.info("Delay between two compactions: {}", DELAY_BETWEEN_TWO_COMPACTIONS);
+        log.info("Monitoring threshold for regions not compacted: {} days", TimeUnit.MILLISECONDS.toDays(MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION));
     }
 }

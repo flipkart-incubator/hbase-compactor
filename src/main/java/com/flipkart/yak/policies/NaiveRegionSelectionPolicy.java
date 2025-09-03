@@ -96,7 +96,7 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
 
     List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
                                             Set<String> compactingRegions, List<RegionInfo> allRegions,
-                                    Connection connection) throws IOException {
+                                    Connection connection, CompactionContext context) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();
         for (String encodedRegion : compactingRegions) {
