@@ -6,7 +6,7 @@
 
     <groupId>com.flipkart.hbase</groupId>
     <artifactId>hbase-compactor</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
     <properties>
         <hbase.client.version>2.5.3</hbase.client.version>
         <hadoop.client.version>2.7.7</hadoop.client.version>
