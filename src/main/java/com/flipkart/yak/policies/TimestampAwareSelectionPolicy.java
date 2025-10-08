@@ -54,7 +54,7 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                 log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
-        MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
+        MonitorService.updateHistogram(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
         
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
