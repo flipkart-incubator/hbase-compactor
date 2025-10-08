@@ -54,7 +54,7 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
             Set<String> compactingRegions = this.getCompactingRegion(allEncodedRegionName, admin);
             Map<String, List<String>> regionFNMapping = new WeakHashMap<>();
             HBaseUtils.refreshRegionToNodeMapping(admin, allEncodedRegionName, regionFNMapping);
-            List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions, connection);
+            List<String> eligibleRegions = this.getEligibleRegions(regionFNMapping, compactingRegions, allRegions, connection, context);
             return this.prepareReport(allRegions, eligibleRegions);
         }catch (IOException e) {
             log.error("Exception while getting eligibility report {}", e.getMessage());
@@ -91,5 +91,5 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
     abstract List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping,
                                                      Set<String> compactingRegions,
                                              List<RegionInfo> allRegions,
-                                             Connection connection) throws IOException;
+                                             Connection connection, CompactionContext context) throws IOException;
 }

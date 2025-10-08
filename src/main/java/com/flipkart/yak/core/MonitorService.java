@@ -46,6 +46,18 @@ public final class MonitorService {
         metricStore.remove(metricNameForStorage);
     }
 
+    public static void setCounterValue(Class name, CompactionContext context, String metric, long value) {
+        String metricName = createMetricName(name, context, metric);
+        String metricNameForStorage = metricName + METRIC_TYPE_DELIMITER + MetricType.COUNTER;
+
+        metricStore.remove(metricNameForStorage);
+        metricRegistry.remove(metricName);
+
+        Counter counter = metricRegistry.counter(metricName);
+        counter.inc(value);
+        metricStore.put(metricNameForStorage, counter);
+    }
+
     private static String createMetricName(Class source, CompactionContext  context, String name) {
         String sourceName = source.getCanonicalName();
         String groupName = context.getRsGroup();
