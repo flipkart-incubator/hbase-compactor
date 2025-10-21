@@ -7,16 +7,18 @@ import com.flipkart.yak.config.CompactionContext;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public final class MonitorService {
 
     private static final MetricRegistry metricRegistry = new MetricRegistry();
     private static final ConcurrentHashMap <String, Metric> metricStore = new ConcurrentHashMap();
+    private static final ConcurrentHashMap<String, AtomicInteger> gaugeAtomics = new ConcurrentHashMap<>();
     private static final String DELIMITER = "_";
     private static final String METRIC_TYPE_DELIMITER = ".";
 
     private enum MetricType {
-        METER, COUNTER, TIMER, HISTOGRAM;
+        METER, COUNTER, TIMER, HISTOGRAM, GAUGE;
     };
     public static  void reportCounterIncr(Class name, CompactionContext  context, String metric, int value) {
         Counter counter = (Counter)getMetric(name, context,metric, MetricType.COUNTER);
@@ -58,6 +60,16 @@ public final class MonitorService {
         metricStore.put(metricNameForStorage, counter);
     }
 
+    public static void updateGauge(Class name, CompactionContext context, String metric, int value) {
+        String metricName = createMetricName(name, context, metric);
+        getMetric(name, context, metric, MetricType.GAUGE);
+
+        AtomicInteger atomic = gaugeAtomics.get(metricName);
+        if (atomic != null) {
+            atomic.set(value);
+        }
+    }
+
     private static String createMetricName(Class source, CompactionContext  context, String name) {
         String sourceName = source.getCanonicalName();
         String groupName = context.getRsGroup();
@@ -78,6 +90,15 @@ public final class MonitorService {
         }
         if ( metric.equals(MetricType.HISTOGRAM)) {
             metricStore.putIfAbsent(metricNameForStorage, metricRegistry.histogram(metricName));
+        }
+        if ( metric.equals(MetricType.GAUGE)) {
+            metricStore.computeIfAbsent(metricNameForStorage, key -> {
+                AtomicInteger atomicValue = new AtomicInteger(0);
+                Gauge<Integer> gauge = atomicValue::get;
+                metricRegistry.register(metricName, gauge);
+                gaugeAtomics.put(metricName, atomicValue);
+                return gauge;
+            });
         }
         return metricStore.get(metricNameForStorage);
     }
