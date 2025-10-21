@@ -48,14 +48,16 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
                     }
                 } else {
                     regionsNotCompacted++;
+                    log.info("Region {} has no major compaction timestamp (likely zero-size or new region) - counted as not compacted",
+                            region.getEncodedName());
                 }
             } catch (Exception e) {
                 regionsNotCompacted++;
                 log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
             }
         }
-        MonitorService.setCounterValue(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
-        
+        MonitorService.updateGauge(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
+
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
         if (size > 0) {
