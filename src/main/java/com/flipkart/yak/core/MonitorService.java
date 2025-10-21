@@ -92,13 +92,13 @@ public final class MonitorService {
             metricStore.putIfAbsent(metricNameForStorage, metricRegistry.histogram(metricName));
         }
         if ( metric.equals(MetricType.GAUGE)) {
-            if (!metricStore.containsKey(metricNameForStorage)) {
+            metricStore.computeIfAbsent(metricNameForStorage, key -> {
                 AtomicInteger atomicValue = new AtomicInteger(0);
                 Gauge<Integer> gauge = atomicValue::get;
                 metricRegistry.register(metricName, gauge);
-                metricStore.put(metricNameForStorage, gauge);
                 gaugeAtomics.put(metricName, atomicValue);
-            }
+                return gauge;
+            });
         }
         return metricStore.get(metricNameForStorage);
     }
