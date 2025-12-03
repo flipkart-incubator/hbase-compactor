@@ -37,18 +37,19 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
         for(RegionInfo region: allRegions) {
             try {
                 long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
+                sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
                 if (timestampMajorCompaction > 0) {
-                    sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
                     long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
                     if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
                         regionsNotCompacted++;
-                        log.info("Region {} not compacted in last 3 days (last compacted: {})",
+                        log.info("Region {} not compacted in last {} days (last compacted: {})",
                                 region.getEncodedName(),
+                                TimeUnit.MILLISECONDS.toDays(MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION),
                                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
                     }
                 } else {
                     regionsNotCompacted++;
-                    log.info("Region {} has no major compaction timestamp (likely zero-size or new region) - counted as not compacted",
+                    log.info("Region {} has no major compaction timestamp (likely zero-size or new region)",
                             region.getEncodedName());
                 }
             } catch (Exception e) {
