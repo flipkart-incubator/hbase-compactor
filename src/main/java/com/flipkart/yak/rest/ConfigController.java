@@ -25,9 +25,9 @@ public class ConfigController {
     private final Object storeResource;
 
     public ConfigController(Factory storeFactory, String storeResourceProperty) throws ConfigurationException {
-        abstractConfigWriter = storeFactory.getWriter();
-        abstractConfigLoader = storeFactory.getLoader();
-        storeResource = abstractConfigWriter.init(storeResourceProperty);
+         abstractConfigWriter = storeFactory.getWriter();
+         abstractConfigLoader = storeFactory.getLoader();
+         storeResource = abstractConfigWriter.init(storeResourceProperty);
     }
 
     @POST
