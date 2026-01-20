@@ -10,6 +10,7 @@ import org.apache.commons.configuration.ConfigurationException;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -33,55 +34,56 @@ public class ConfigController {
     @Path("/context")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean addContext(CompactionContext compactionContext) {
+    public Response addContext(CompactionContext compactionContext) {
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
-        return response;
+        return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
     @DELETE
     @Path("/context")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean removeContext(CompactionContext compactionContext) {
+    public Response removeContext(CompactionContext compactionContext) {
         boolean response = abstractConfigWriter.deleteContext(storeResource, compactionContext);
-        return response;
+        return Response.status(Response.Status.OK).entity(response).build();
     }
 
     @POST
     @Path("/trigger")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean triggerImmediateCompaction(PromptCompactionRequest promptCompactionRequest) {
+    public Response triggerImmediateCompaction(PromptCompactionRequest promptCompactionRequest) {
         CompactionContext compactionContext = CompactionUtils.getCompactionContext(promptCompactionRequest);
         boolean response = abstractConfigWriter.storeContext(storeResource, compactionContext);
-        return response;
+        return Response.status(Response.Status.ACCEPTED).entity(response).build();
     }
 
     @DELETE
     @Path("/deleteAllStaleContexts")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean removeStaleContexts() {
+    public Response removeStaleContexts() {
         boolean response = abstractConfigWriter.deleteAllStaleContexts(storeResource);
-        return response;
+        return Response.status(Response.Status.OK).entity(response).build();
     }
 
     @POST
     @Path("/profile")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean addProfile(CompactionProfileConfig compactionProfileConfig) {
+    public Response addProfile(CompactionProfileConfig compactionProfileConfig) {
         boolean response = abstractConfigWriter.storeProfile(storeResource, compactionProfileConfig);
-        return response;
+        return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
     @GET
     @Path("/contexts")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public List<CompactionContext> getContexts() {
+    public Response getContexts() {
         try {
-            return abstractConfigLoader.getCompactionContexts(storeResource);
+            List<CompactionContext> contexts = abstractConfigLoader.getCompactionContexts(storeResource);
+            return Response.status(Response.Status.OK).entity(contexts).build();
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         }
@@ -91,9 +93,10 @@ public class ConfigController {
     @Path("/profiles")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public List<CompactionProfileConfig> getProfiles() {
+    public Response getProfiles() {
         try {
-            return abstractConfigLoader.getProfiles(storeResource);
+            List<CompactionProfileConfig> profiles = abstractConfigLoader.getProfiles(storeResource);
+            return Response.status(Response.Status.OK).entity(profiles).build();
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         }
