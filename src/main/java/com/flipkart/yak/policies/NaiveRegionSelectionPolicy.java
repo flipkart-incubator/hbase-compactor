@@ -99,6 +99,7 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
                                     Connection connection, CompactionContext context) throws IOException {
         List<String> encodedRegions = new ArrayList<>();
         Map<String, MutableInt> serversForThisBatch = new WeakHashMap<>();
+        Map<TableName, MutableInt> compactionsPerTable = new HashMap<>();
         for (String encodedRegion : compactingRegions) {
             if (regionFNHostnameMapping.containsKey(encodedRegion)) {
                 regionFNHostnameMapping.get(encodedRegion).forEach(server -> {
@@ -108,12 +109,21 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
                 });
             }
         }
+        for (RegionInfo region : allRegions) {
+            if (compactingRegions.contains(region.getEncodedName())) {
+                compactionsPerTable.putIfAbsent(region.getTable(), new MutableInt(0));
+                compactionsPerTable.get(region.getTable()).increment();
+            }
+        }
         log.debug("starting to analyse {} regions - this is total number of regions present for this target", allRegions.size());
         for (RegionInfo region : allRegions) {
-            if (!compactingRegions.contains(region.getEncodedName()) && encodedRegions.size() < (
-                    MAX_PARALLEL_COMPACTION_PER_TARGET - compactingRegions.size())) {
+            TableName tableName = region.getTable();
+            compactionsPerTable.putIfAbsent(tableName, new MutableInt(0));
+            if (!compactingRegions.contains(region.getEncodedName())
+                    && compactionsPerTable.get(tableName).intValue() < MAX_PARALLEL_COMPACTION_PER_TARGET) {
                 if (!regionFNHostnameMapping.containsKey(region.getEncodedName())) {
                     log.warn("No favored nodes for region: " + region.getEncodedName());
+                    continue;
                 }
                 boolean shouldAdd = true;
                 for (String fn : regionFNHostnameMapping.get(region.getEncodedName())) {
@@ -123,12 +133,13 @@ public class NaiveRegionSelectionPolicy extends HBASEBasePolicy {
                         break;
                     }
                 }
-                if (shouldAdd && regionFNHostnameMapping.containsKey(region.getEncodedName())) {
+                if (shouldAdd) {
                     regionFNHostnameMapping.get(region.getEncodedName()).forEach(server -> {
                         serversForThisBatch.putIfAbsent(server, new MutableInt(0));
                         serversForThisBatch.get(server).increment();
                         log.debug("setting {} scheduled compactions for server {}", serversForThisBatch.get(server), server);
                     });
+                    compactionsPerTable.get(tableName).increment();
                     encodedRegions.add(region.getEncodedName());
                 }
             }

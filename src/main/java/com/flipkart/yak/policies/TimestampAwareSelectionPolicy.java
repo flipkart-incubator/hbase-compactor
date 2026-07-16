@@ -3,6 +3,9 @@ package com.flipkart.yak.policies;
 import com.flipkart.yak.config.CompactionContext;
 import com.flipkart.yak.core.MonitorService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hadoop.hbase.ClusterMetrics;
+import org.apache.hadoop.hbase.RegionMetrics;
+import org.apache.hadoop.hbase.ServerMetrics;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.RegionInfo;
@@ -10,7 +13,6 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -29,51 +31,99 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
 
     @Override
     List<String> getEligibleRegions(Map<String, List<String>> regionFNHostnameMapping, Set<String> compactingRegions, List<RegionInfo> allRegions, Connection connection, CompactionContext context) throws IOException {
-        List<String> regionsWhichCanBeCompacted = new ArrayList<>();
-        List<Pair<RegionInfo,Long>> sortedListOfRegionOnMCTime = new ArrayList<>();
-        Admin admin = connection.getAdmin();
+        if (allRegions == null || allRegions.isEmpty()) {
+            log.warn("No regions provided for eligibility check");
+            return Collections.emptyList();
+        }
+
         long currentTimestamp = EnvironmentEdgeManager.currentTime();
         int regionsNotCompacted = 0;
-        for(RegionInfo region: allRegions) {
-            try {
-                long timestampMajorCompaction = admin.getLastMajorCompactionTimestampForRegion(region.getRegionName());
-                sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
-                if (timestampMajorCompaction > 0) {
-                    long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
-                    if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
-                        regionsNotCompacted++;
-                        log.info("Region {} not compacted in last {} days (last compacted: {})",
-                                region.getEncodedName(),
-                                TimeUnit.MILLISECONDS.toDays(MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION),
-                                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
-                    }
-                } else {
+
+        Map<String, RegionCompactionInfo> regionInfoMap;
+        try (Admin admin = connection.getAdmin()) {
+            regionInfoMap = buildRegionCompactionInfo(admin, allRegions);
+        }
+
+        List<Pair<RegionInfo, Long>> sortedListOfRegionOnMCTime = new ArrayList<>(allRegions.size());
+        List<String> regionsWhichCanBeCompacted = new ArrayList<>();
+
+        for (RegionInfo region : allRegions) {
+            String encodedName = region.getEncodedName();
+            RegionCompactionInfo info = regionInfoMap.getOrDefault(encodedName, RegionCompactionInfo.UNKNOWN);
+            long timestampMajorCompaction = info.lastMajorCompactionTs;
+            int storeFileCount = info.storeFileCount;
+            long timeSinceLastCompaction = currentTimestamp - timestampMajorCompaction;
+
+            sortedListOfRegionOnMCTime.add(new Pair<>(region, timestampMajorCompaction));
+
+            if (timestampMajorCompaction > 0) {
+                if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
                     regionsNotCompacted++;
-                    log.info("Region {} has no major compaction timestamp (likely zero-size or new region)",
-                            region.getEncodedName());
                 }
-            } catch (Exception e) {
+            } else {
                 regionsNotCompacted++;
-                log.warn("Failed to get compaction timestamp for region {}: {}", region.getEncodedName(), e.getMessage());
+            }
+
+            boolean neverCompactedButHasData = (timestampMajorCompaction == 0) && (storeFileCount > 0);
+            boolean dueForCompaction = (timestampMajorCompaction > 0)
+                    && (timeSinceLastCompaction > DELAY_BETWEEN_TWO_COMPACTIONS);
+            if (neverCompactedButHasData || dueForCompaction) {
+                regionsWhichCanBeCompacted.add(encodedName);
             }
         }
+
         MonitorService.updateGauge(this.getClass(), context, "regionsNotCompacted", regionsNotCompacted);
 
         sortedListOfRegionOnMCTime.sort(Comparator.comparing(Pair::getSecond));
         int size = sortedListOfRegionOnMCTime.size();
         if (size > 0) {
-            long lowestTimeStamp = sortedListOfRegionOnMCTime.get(0).getSecond();
-            long highestTimeStamp = sortedListOfRegionOnMCTime.get(size -1).getSecond();
-            log.info("Region With Earliest timeStamp: {}, Region With Oldest timeStamp: {}", lowestTimeStamp, highestTimeStamp);
+            long oldestTs = sortedListOfRegionOnMCTime.get(0).getSecond();
+            long newestTs = sortedListOfRegionOnMCTime.get(size - 1).getSecond();
+            log.info("Compaction timestamp range: oldest={}, newest={}", oldestTs, newestTs);
         }
-        for(Pair<RegionInfo,Long> region: sortedListOfRegionOnMCTime) {
-            log.info("Region {} last compacted at {}", region, region.getSecond());
-            if ((currentTimestamp - region.getSecond() > DELAY_BETWEEN_TWO_COMPACTIONS) && !compactingRegions.contains(region)) {
-                regionsWhichCanBeCompacted.add(region.getFirst().getEncodedName());
-            }
-        }
-        log.info("marked {} regions as eligible region ", regionsWhichCanBeCompacted.size());
+
+        log.info("Marked {} of {} regions as eligible for compaction ({} already compacting, {} overdue)",
+                regionsWhichCanBeCompacted.size(), allRegions.size(),
+                compactingRegions.size(), regionsNotCompacted);
+
         return regionsWhichCanBeCompacted;
+    }
+
+    private Map<String, RegionCompactionInfo> buildRegionCompactionInfo(Admin admin, List<RegionInfo> allRegions) {
+        Set<String> targetRegions = new HashSet<>(allRegions.size());
+        for (RegionInfo ri : allRegions) {
+            targetRegions.add(ri.getEncodedName());
+        }
+
+        Map<String, RegionCompactionInfo> result = new HashMap<>(allRegions.size());
+        try {
+            ClusterMetrics clusterMetrics = admin.getClusterMetrics(EnumSet.of(ClusterMetrics.Option.LIVE_SERVERS));
+            for (ServerMetrics serverMetrics : clusterMetrics.getLiveServerMetrics().values()) {
+                for (RegionMetrics regionMetrics : serverMetrics.getRegionMetrics().values()) {
+                    String encodedName = RegionInfo.encodeRegionName(regionMetrics.getRegionName());
+                    if (targetRegions.contains(encodedName)) {
+                        result.put(encodedName, new RegionCompactionInfo(
+                                regionMetrics.getStoreFileCount(),
+                                regionMetrics.getLastMajorCompactionTimestamp()));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error("Failed to fetch cluster metrics for region compaction info", e);
+        }
+        return result;
+    }
+
+    private static class RegionCompactionInfo {
+        static final RegionCompactionInfo UNKNOWN = new RegionCompactionInfo(0, 0);
+
+        final int storeFileCount;
+        final long lastMajorCompactionTs;
+
+        RegionCompactionInfo(int storeFileCount, long lastMajorCompactionTs) {
+            this.storeFileCount = storeFileCount;
+            this.lastMajorCompactionTs = lastMajorCompactionTs;
+        }
     }
 
     @Override
