@@ -13,6 +13,7 @@ import org.apache.hadoop.hbase.util.EnvironmentEdgeManager;
 import org.apache.hadoop.hbase.util.Pair;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -59,16 +60,20 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
             if (timestampMajorCompaction > 0) {
                 if (timeSinceLastCompaction > MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION) {
                     regionsNotCompacted++;
+                    log.info("Region {} not compacted in last {} days (last compacted: {})",
+                            encodedName,
+                            TimeUnit.MILLISECONDS.toDays(MIN_DAYS_ALLOWED_BETWEEN_CONSECUTIVE_COMPACTIONS_OF_REGION),
+                            new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(timestampMajorCompaction)));
                 }
-            } else {
+            } else if (storeFileCount > 0) {
+                // Never compacted but holds data: genuinely pending. Zero-size regions have nothing
+                // to compact, so they stay out of the metric.
                 regionsNotCompacted++;
-            }
-
-            boolean neverCompactedButHasData = (timestampMajorCompaction == 0) && (storeFileCount > 0);
-            boolean dueForCompaction = (timestampMajorCompaction > 0)
-                    && (timeSinceLastCompaction > DELAY_BETWEEN_TWO_COMPACTIONS);
-            if (neverCompactedButHasData || dueForCompaction) {
-                regionsWhichCanBeCompacted.add(encodedName);
+                log.info("Region {} has no major compaction timestamp (likely new region with data)",
+                        encodedName);
+            } else {
+                log.info("Region {} has no major compaction timestamp (likely zero-size or new region)",
+                        encodedName);
             }
         }
 
@@ -80,6 +85,20 @@ public class TimestampAwareSelectionPolicy extends NaiveRegionSelectionPolicy {
             long oldestTs = sortedListOfRegionOnMCTime.get(0).getSecond();
             long newestTs = sortedListOfRegionOnMCTime.get(size - 1).getSecond();
             log.info("Compaction timestamp range: oldest={}, newest={}", oldestTs, newestTs);
+        }
+
+        // Oldest-first order. Do not filter compactingRegions here — Naive needs those regions in
+        // the report to count in-flight load against caps.
+        for (Pair<RegionInfo, Long> pair : sortedListOfRegionOnMCTime) {
+            String encodedName = pair.getFirst().getEncodedName();
+            RegionCompactionInfo info = regionInfoMap.getOrDefault(encodedName, RegionCompactionInfo.UNKNOWN);
+            long ts = pair.getSecond();
+            long age = currentTimestamp - ts;
+            boolean neverCompactedButHasData = (ts == 0) && (info.storeFileCount > 0);
+            boolean dueForCompaction = (ts > 0) && (age > DELAY_BETWEEN_TWO_COMPACTIONS);
+            if (neverCompactedButHasData || dueForCompaction) {
+                regionsWhichCanBeCompacted.add(encodedName);
+            }
         }
 
         log.info("Marked {} of {} regions as eligible for compaction ({} already compacting, {} overdue)",

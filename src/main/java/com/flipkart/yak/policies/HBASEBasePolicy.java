@@ -8,9 +8,8 @@ import com.flipkart.yak.core.CompactionRuntimeException;
 import com.flipkart.yak.core.MonitorService;
 import com.flipkart.yak.interfaces.RegionSelectionPolicy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.hadoop.hbase.ClusterMetrics;
 import org.apache.hadoop.hbase.RegionMetrics;
-import org.apache.hadoop.hbase.ServerMetrics;
+import org.apache.hadoop.hbase.ServerName;
 import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.CompactionState;
 import org.apache.hadoop.hbase.client.Connection;
@@ -66,20 +65,18 @@ public abstract class HBASEBasePolicy implements RegionSelectionPolicy<Connectio
 
 
     private Set<String> getCompactingRegion(List<String> regions, Admin admin) throws IOException {
-        // Derive compaction state from a single bulk ClusterMetrics call (Master-side, pre-aggregated from RS
-        // heartbeats) instead of one getCompactionStateForRegion RPC per region, which previously meant thousands
-        // of sequential round-trips per run.
+        // ClusterMetrics cannot be used here: the Master drops compaction_state when it re-serialises
+        // metrics for a remote client (RegionMetricsBuilder.toRegionLoad never sets the field), so every
+        // region would read back as the protobuf default NONE.
         Set<String> regionsOfInterest = new HashSet<>(regions);
         Set<String> compactingRegions = new HashSet<>();
-        ClusterMetrics clusterMetrics = admin.getClusterMetrics(EnumSet.of(ClusterMetrics.Option.LIVE_SERVERS));
-        for (ServerMetrics serverMetrics : clusterMetrics.getLiveServerMetrics().values()) {
-            for (RegionMetrics regionMetrics : serverMetrics.getRegionMetrics().values()) {
+        for (ServerName serverName : admin.getRegionServers()) {
+            for (RegionMetrics regionMetrics : admin.getRegionMetrics(serverName)) {
                 String encodedRegion = RegionInfo.encodeRegionName(regionMetrics.getRegionName());
                 if (!regionsOfInterest.contains(encodedRegion)) {
                     continue;
                 }
                 CompactionState compactionState = regionMetrics.getCompactionState();
-                log.trace("Compaction state: " + encodedRegion + " - " + compactionState);
                 if (compactionState != null && (compactionState.equals(CompactionState.MAJOR)
                         || compactionState.equals(CompactionState.MAJOR_AND_MINOR))) {
                     log.debug("In Progress compaction for: " + encodedRegion);
